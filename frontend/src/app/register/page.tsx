@@ -13,10 +13,11 @@ import { Field, Input } from "@/components/ui/input";
 import { Banner } from "@/components/ui/misc";
 import { AuthFrame } from "@/components/app/auth-frame";
 import { cn } from "@/lib/utils";
+import { isDisposableEmail } from "@/lib/disposable-emails";
 
 const schema = z.object({
   full_name: z.string().trim().min(2, "Enter your full name"),
-  email: z.string().email("Enter a valid email"),
+  email: z.string().email("Enter a valid email").refine((v) => !isDisposableEmail(v), "Disposable email addresses aren't allowed. Please use your real email."),
   password: z
     .string()
     .min(8, "At least 8 characters")
