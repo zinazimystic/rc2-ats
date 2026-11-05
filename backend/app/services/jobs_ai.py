@@ -139,7 +139,7 @@ def extract_job_requirements(title: str | None, description: str) -> JobExtractO
                 education_level=lvl or _education(description), qualifications=[q.strip() for q in out.qualifications if q.strip()][:10],
                 method="llm", warnings=warnings,
             )
-        except (llm.LLMUnavailable, llm.LLMError) as exc:
+        except Exception as exc:
             warnings.append(f"AI extraction unavailable ({exc}); used a keyword scan instead. Review the draft carefully.")
     else:
         warnings.append("AI extraction is not configured; used a keyword scan instead. Review the draft carefully.")

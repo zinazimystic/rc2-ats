@@ -67,6 +67,8 @@ def _post(payload: dict) -> dict:
                 r = httpx.post(url, headers=headers, json=payload, timeout=settings.llm_timeout_seconds)
         except httpx.TransportError as exc:  # connect/read timeouts, proxy errors, protocol errors
             last = exc
+            if attempt >= 1 and not isinstance(exc, httpx.TimeoutException):
+                break  # blocked network / refused connection: fail fast, callers degrade to rules
             time.sleep(1.5 * (attempt + 1))
             continue
         if r.status_code in (401, 402, 403):

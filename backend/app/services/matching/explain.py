@@ -158,6 +158,6 @@ def explain(job: JobSpec, cand: CandidateSpec, results: list[RequirementResult],
                 ex.summary_method = "llm"
                 if learn:
                     ex.learning = learn[:5]
-        except (llm.LLMUnavailable, llm.LLMError) as exc:
+        except Exception as exc:  # LLMUnavailable / LLMError / anything else: keep the template summary
             log.info("narrative fell back to template: %s", exc)
     return ex

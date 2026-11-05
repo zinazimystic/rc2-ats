@@ -147,6 +147,9 @@ def extract(text: str, names: list[str] | tuple[str, ...] = ()) -> Extraction:
             warnings.append(f"AI extraction unavailable ({exc}); used rule-based extraction.")
         except llm.LLMError as exc:
             warnings.append(f"AI extraction failed ({exc}); used rule-based extraction.")
+        except Exception as exc:  # never let a provider problem fail the resume
+            log.warning("unexpected LLM failure: %s", exc)
+            warnings.append("AI extraction failed unexpectedly; used rule-based extraction.")
     else:
         warnings.append("AI extraction is not configured; used rule-based extraction (evidence still verified).")
 

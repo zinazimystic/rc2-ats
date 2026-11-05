@@ -12,7 +12,7 @@ URL_RE = re.compile(r"(?:https?://|www\.)[^\s<>()\[\]]+|(?:linkedin\.com|github\
 PHONE_RE = re.compile(r"(?<![\w.])(?:\+?\d{1,3}[\s.\-]?)?(?:\(\d{2,4}\)[\s.\-]?|\d{2,4}[\s.\-])?\d{3,4}[\s.\-]?\d{3,4}(?![\w])")
 _YEAR_RANGE = re.compile(r"^(?:19|20)\d{2}\D+(?:19|20)\d{2}$")
 ADDRESS_RE = re.compile(
-    r"\b\d{1,5}[A-Za-z]?\s+(?:[A-Z][\w.]*\s+){1,4}(?:Street|St|Road|Rd|Avenue|Ave|Lane|Ln|Boulevard|Blvd|Drive|Dr|Block|Sector)\b\.?(?:[^\n]{0,40})?",
+    r"\b\d{1,5}[A-Za-z]?\s+(?:[A-Z][\w.]*\s+){1,4}(?:Street|St|Road|Rd|Avenue|Ave|Lane|Ln|Boulevard|Blvd|Drive|Dr|Block|Sector)\b\.?",
 )
 PROTECTED_LINE_RE = re.compile(
     r"^\s*(?:[-•*]\s*)?(?:date\s+of\s+birth|d\.?o\.?b\.?|birth\s*date|born|age|gender|sex|marital\s+status|nationality|"
@@ -85,7 +85,9 @@ def detect_name_line(text: str) -> tuple[int, int] | None:
 def _spans(text: str, names: list[str], neutralize: bool) -> list[tuple[int, int, str]]:
     spans: list[tuple[int, int, str]] = []
     for m in PROTECTED_LINE_RE.finditer(text):
-        spans.append((m.start(), m.end(), "[REDACTED: protected attribute]"))
+        # drop the whole line (incl. its newline) so the model input is identical with or without the attribute
+        has_next = text[m.end():m.end() + 1] == "\n"
+        spans.append((m.start(), m.end() + (1 if has_next else 0), ""))
     for m in EMAIL_RE.finditer(text):
         spans.append((m.start(), m.end(), "[EMAIL]"))
     for m in URL_RE.finditer(text):
@@ -141,7 +143,7 @@ def redact(text: str, names: list[str] | tuple[str, ...] = (), *, neutralize: bo
     if cur_o < len(text):
         out.append(text[cur_o:])
         segs.append(Seg(cur_r, cur_r + (len(text) - cur_o), cur_o, len(text), False))
-    return Redacted("".join(out), segs)
+    return Redacted("".join(out).rstrip(), segs)  # trailing blank lines left by removed lines carry no information
 
 
 def redact_plain(text: str, names: list[str] | tuple[str, ...] = ()) -> str:

@@ -59,6 +59,8 @@ def _embed_remote(text: str) -> list[float]:
             r = httpx.post(_url(), headers=headers, content=json.dumps(body), timeout=30.0)
         except httpx.TransportError as exc:
             last = exc
+            if attempt >= 1 and not isinstance(exc, httpx.TimeoutException):
+                break
             time.sleep(min(8, 1.5 * 2**attempt))
             continue
         if r.status_code in (401, 403):
@@ -100,8 +102,14 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
     if todo:
         keys = list(todo)
         first = [texts[todo[k][0]] for k in keys]
-        with ThreadPoolExecutor(max_workers=min(8, len(keys))) as ex:
-            vecs = list(ex.map(_embed_remote, first))
+        try:
+            with ThreadPoolExecutor(max_workers=min(8, len(keys))) as ex:
+                vecs = list(ex.map(_embed_remote, first))
+        except EmbeddingUnavailable:
+            raise
+        except Exception as exc:  # any provider/parsing failure degrades to keyword matching
+            _disable(30)
+            raise EmbeddingUnavailable(f"Embedding call failed: {type(exc).__name__}") from exc
         for k, v in zip(keys, vecs):
             cache.put(k, "embedding", {"v": v})
             for i in todo[k]:
