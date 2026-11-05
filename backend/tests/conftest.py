@@ -1,0 +1,94 @@
+"""Shared pytest fixtures: isolated SQLite DB, eager background tasks, fake AI providers."""
+from __future__ import annotations
+
+import os
+import tempfile
+from pathlib import Path
+
+_TMP = Path(tempfile.mkdtemp(prefix="ats-tests-"))
+# Must be set before any `app` module is imported (env vars beat backend/.env)
+os.environ.update(
+    {
+        "APP_ENV": "test",
+        "DATABASE_URL": f"sqlite:///{(_TMP / 'test.db').as_posix()}",
+        "DEEPSEEK_API_KEY": "",
+        "AWS_BEARER_TOKEN_BEDROCK": "",
+        "TASKS_EAGER": "1",
+        "JWT_SECRET": "test-secret-not-for-production",
+        "RECRUITER_INVITE_CODE": "",
+        "COOKIE_SECURE": "false",
+    }
+)
+
+import pytest  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _fresh_db():
+    from app.db.base import Base
+    from app.db.session import engine
+    import app.models  # noqa: F401
+
+    Base.metadata.drop_all(engine)
+    Base.metadata.create_all(engine)
+    yield
+
+
+@pytest.fixture(autouse=True)
+def _fakes(monkeypatch):
+    from tests import fakes
+
+    fakes.install_fakes(monkeypatch)
+
+
+@pytest.fixture()
+def db():
+    from app.db.session import SessionLocal
+
+    session = SessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+@pytest.fixture()
+def app():
+    from app.main import create_app
+
+    return create_app()
+
+
+@pytest.fixture()
+def client(app):
+    from fastapi.testclient import TestClient
+
+    with TestClient(app) as c:
+        yield c
+
+
+def register(client, *, role: str, email: str, name: str = "Test User", password: str = "Passw0rd!x"):
+    """Register + log in through the real API. The TestClient keeps the session cookie."""
+    r = client.post("/api/auth/register", json={"email": email, "password": password, "full_name": name, "role": role})
+    assert r.status_code == 201, r.text
+    return r.json()
+
+
+@pytest.fixture()
+def make_client(app):
+    """Factory for extra, independently-logged-in clients (e.g. a recruiter and several candidates)."""
+    from fastapi.testclient import TestClient
+
+    opened = []
+
+    def _make(role: str, email: str, name: str = "Test User"):
+        c = TestClient(app)
+        c.__enter__()
+        opened.append(c)
+        user = register(c, role=role, email=email, name=name)
+        c.user = user  # type: ignore[attr-defined]
+        return c
+
+    yield _make
+    for c in opened:
+        c.__exit__(None, None, None)
