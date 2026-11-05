@@ -81,7 +81,15 @@ def overview(db: Session, recruiter: User, job: Job | None = None) -> AnalyticsO
     ]
     funnel = [StageCount(stage=s, label=workflow.status_label(s), count=by_status[s]) for s in FUNNEL]
 
-    proc = [(a.assessed_at - a.created_at).total_seconds() for a in apps if a.assessed_at]
+    # AI turnaround = submission -> FIRST "AI assessment available" (assessed_at moves on every re-assessment, which would inflate it)
+    first_assessed: dict[uuid.UUID, object] = {}
+    if apps:
+        first_assessed = dict(db.execute(
+            select(AuditEvent.application_id, func.min(AuditEvent.created_at))
+            .where(AuditEvent.action == "status_change", AuditEvent.to_value == "ai_assessed", AuditEvent.application_id.in_([a.id for a in apps]))
+            .group_by(AuditEvent.application_id)
+        ).all())
+    proc = [max(0.0, (first_assessed.get(a.id, a.assessed_at) - a.created_at).total_seconds()) for a in apps if a.id in first_assessed or a.assessed_at]
     decide = [(a.decided_at - a.created_at).total_seconds() / 3600 for a in apps if a.decided_at]
 
     assessed = [a for a in apps if a.id in asm_by_app]
