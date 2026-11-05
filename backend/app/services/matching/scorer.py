@@ -66,6 +66,8 @@ def experience_component(job: JobSpec, cand: CandidateSpec) -> tuple[float, dict
     core = {tax.canonical(r.skill) for r in job.requirements if r.importance >= 3 and r.kind == "required"} or {
         tax.canonical(r.skill) for r in job.requirements
     }
+    # a role using a closely related technology (Flask for Django, MySQL for PostgreSQL) is relevant experience too
+    core = core | {rel for c in core for rel, w in tax.related(c).items() if w >= 0.5}
     all_iv, rel_iv, undated = [], [], 0
     for e in cand.experience:
         if e.verification == "unverified":
@@ -111,7 +113,13 @@ def projects_component(job: JobSpec, cand: CandidateSpec, sem: Semantics) -> tup
         techs = {tax.canonical(t) for t in p.tech} | set(tax.skills_in(p.text))
         overlap = 0.0
         if total_w:
-            covered = sum(w for k, w in reqs.items() if k in techs)
+            covered = 0.0
+            for k, w in reqs.items():
+                if k in techs:
+                    covered += w
+                else:  # closely related technology earns partial credit (capped like skill credit)
+                    rel = max((min(0.7, rw) for t, rw in tax.related(k).items() if t in techs and rw >= 0.4), default=0.0)
+                    covered += w * rel
             overlap = min(1.0, covered / (0.6 * total_w))
         if sem.available and i in sem.project_sims:
             s = 0.5 * _scale_sim(sem.project_sims[i]) + 0.5 * overlap

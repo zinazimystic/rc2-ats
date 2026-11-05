@@ -8,6 +8,7 @@ from app.services.matching.specs import CandidateSpec, ChunkSpec, JobSpec, ReqSp
 from app.services.parsing.normalizer import taxonomy
 
 MAX_QUOTE = 300
+MIN_RELATED = 0.4  # weaker taxonomy relations earn no credit
 
 
 def compute_semantics(
@@ -96,7 +97,7 @@ def match_one(req: ReqSpec, idx: int, cand: CandidateSpec, sem: Semantics) -> Re
     if best_credit < 1.0:
         for rname, w in tax.related(target).items():
             rs = by_name.get(rname)
-            if rs is None or rs.presence == "absent" or rs.verification in ("unverified",):
+            if w < MIN_RELATED or rs is None or rs.presence == "absent" or rs.verification in ("unverified",):
                 continue
             credit = min(0.7, float(w))
             consider(RequirementResult(**base, status="partial", credit=round(credit, 3), match_type="related", matched_as=rs.name,

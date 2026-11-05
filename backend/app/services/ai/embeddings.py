@@ -57,7 +57,7 @@ def _embed_remote(text: str) -> list[float]:
     for attempt in range(5):
         try:
             r = httpx.post(_url(), headers=headers, content=json.dumps(body), timeout=30.0)
-        except (httpx.ConnectError, httpx.TimeoutException, httpx.RemoteProtocolError) as exc:
+        except httpx.TransportError as exc:
             last = exc
             time.sleep(min(8, 1.5 * 2**attempt))
             continue

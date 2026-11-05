@@ -32,6 +32,7 @@ class Extracted:
     warnings: list[str] = field(default_factory=list)
     flags: list[Flag] = field(default_factory=list)
     hidden_chars: int = 0
+    hidden_text: str = ""
 
 
 def detect_kind(data: bytes) -> str | None:
@@ -180,6 +181,7 @@ def _page_text(page, ex: Extracted) -> str:  # noqa: ANN001
                     hidden = not any(r.intersects(dk) for dk in dark)
                 if hidden:
                     ex.hidden_chars += len(t.strip())
+                    ex.hidden_text += t + " "
                 else:
                     seg.append(t)
             line = "".join(seg).rstrip()
@@ -220,6 +222,7 @@ def _extract_docx(data: bytes) -> Extracted:
                 pass
             if hidden:
                 ex.hidden_chars += len(t.strip())
+                ex.hidden_text += t + " "
             else:
                 out.append(t)
         return "".join(out)

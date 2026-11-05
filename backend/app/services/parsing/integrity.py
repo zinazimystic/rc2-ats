@@ -30,9 +30,14 @@ def find_injection(text: str) -> list[str]:
     return hits
 
 
-def scan(text: str, *, hidden_chars: int = 0) -> list[Flag]:
+def scan(text: str, *, hidden_chars: int = 0, hidden_text: str = "") -> list[Flag]:
     flags: list[Flag] = []
     inj = find_injection(text)
+    if not inj and hidden_text:
+        hid = find_injection(hidden_text)
+        if hid:
+            flags.append(Flag(type="prompt_injection", severity="critical",
+                              message='Hidden text contained instructions aimed at an AI ("' + hid[0] + '"). It was removed and had no effect on scoring.'))
     if inj:
         flags.append(
             Flag(

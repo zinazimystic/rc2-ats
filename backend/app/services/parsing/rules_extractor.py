@@ -26,6 +26,7 @@ _LEVELS: list[tuple[str, re.Pattern]] = [
     ("high_school", re.compile(r"\bhigh school\b|\bsecondary school\b|\ba[- ]levels?\b|\bhsc\b|\bssc\b|\bintermediate\b|\bgcse\b", re.I)),
 ]
 _INSTITUTION = re.compile(r"\b(university|college|institute|school|academy|polytechnic|universit[àé]t?)\b", re.I)
+_PROJ_META = re.compile(r"^(tech|stack|technologies|tools|built with|link|url|github|demo)\\b", re.I)
 _SPLIT = re.compile(r"\s+\|\s+|\s+@\s+|\s+at\s+|\s+[–—-]\s+|,\s+|\s{3,}|\t")
 
 
@@ -204,19 +205,35 @@ def parse_projects(text: str, sections: list[Section]) -> list[ProjectItem]:
         return []
     tax = taxonomy()
     blocks: list[dict] = []
-    pos = base
-    for ln in body.split("\n"):
-        s, e = pos, pos + len(ln)
-        pos = e + 1
+    raw = body.split("\n")
+    offs, pos = [], base
+    for ln in raw:
+        offs.append((pos, pos + len(ln)))
+        pos += len(ln) + 1
+
+    def next_nonempty(i: int) -> str | None:
+        for j in range(i + 1, len(raw)):
+            if raw[j].strip():
+                return raw[j]
+        return None
+
+    for i, ln in enumerate(raw):
+        s_, e_ = offs[i]
         if not ln.strip():
             continue
+        t = ln.strip()
         is_bullet = bool(_BULLET.match(ln))
         cur = blocks[-1] if blocks else None
-        if not is_bullet and len(ln.strip()) <= 100 and (cur is None or cur["desc"]):
-            blocks.append({"head": ln.strip(), "hs": s, "he": e, "desc": [], "end": e})
+        nxt = next_nonempty(i)
+        header = (
+            not is_bullet and len(t) <= 100 and not t.endswith(".") and not t[0].islower() and not _PROJ_META.match(t)
+            and (cur is None or (nxt is not None and bool(_BULLET.match(nxt))) or (cur["desc"] and (i == 0 or not raw[i - 1].strip())))
+        )
+        if header:
+            blocks.append({"head": t, "hs": s_, "he": e_, "desc": [], "end": e_})
         elif cur is not None:
             cur["desc"].append(_strip_bullet(ln))
-            cur["end"] = e
+            cur["end"] = e_
     items: list[ProjectItem] = []
     for b in blocks[:8]:
         head = b["head"]

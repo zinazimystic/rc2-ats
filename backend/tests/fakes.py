@@ -40,3 +40,22 @@ def install_fakes(monkeypatch, *, llm: bool = False) -> None:
             raise llm_mod.LLMUnavailable("LLM disabled in tests")
 
         monkeypatch.setattr(llm_mod, "json_call", _unavailable)
+
+
+def install_fake_llm(monkeypatch, handler) -> list[dict]:
+    """Make the LLM 'available' and route json_call to `handler(system, user, model) -> dict | BaseModel`.
+
+    Returns a list that records every call as {"system", "user", "model"} so tests can assert on what the LLM saw.
+    """
+    from app.services.ai import llm as llm_mod
+
+    calls: list[dict] = []
+
+    def _json_call(system, user, model, *, max_tokens=4000, cache_kind=None):
+        calls.append({"system": system, "user": user, "model": model.__name__})
+        out = handler(system, user, model)
+        return out if isinstance(out, model) else model.model_validate(out)
+
+    monkeypatch.setattr(llm_mod, "llm_available", lambda: True)
+    monkeypatch.setattr(llm_mod, "json_call", _json_call)
+    return calls

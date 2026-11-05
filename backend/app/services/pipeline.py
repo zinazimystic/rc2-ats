@@ -124,7 +124,7 @@ def _process_resume(db, resume_id: UUID) -> None:  # noqa: ANN001
     warnings = list(ex.warnings) + list(result.warnings)
     if not embedded:
         warnings.append("Semantic matching is unavailable for this resume (embeddings service not reachable); keyword and alias matching is used.")
-    flags: list[Flag] = [*ex.flags, *integrity.scan(ex.text, hidden_chars=ex.hidden_chars), *result.flags, *extractor.date_flags(result.parsed)]
+    flags: list[Flag] = [*ex.flags, *integrity.scan(ex.text, hidden_chars=ex.hidden_chars, hidden_text=ex.hidden_text), *result.flags, *extractor.date_flags(result.parsed)]
 
     resume.text = ex.text
     resume.page_count = ex.page_count

@@ -65,7 +65,7 @@ def _post(payload: dict) -> dict:
         try:
             with _sem:
                 r = httpx.post(url, headers=headers, json=payload, timeout=settings.llm_timeout_seconds)
-        except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout, httpx.RemoteProtocolError, httpx.PoolTimeout) as exc:
+        except httpx.TransportError as exc:  # connect/read timeouts, proxy errors, protocol errors
             last = exc
             time.sleep(1.5 * (attempt + 1))
             continue
