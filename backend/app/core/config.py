@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     cookie_name: str = "ats_session"
     recruiter_invite_code: str = ""
     max_upload_mb: int = 5
+    register_rate_limit_per_hour: int = 20  # sign-ups per IP per hour
 
     deepseek_api_key: str = ""
     deepseek_base_url: str = "https://api.deepseek.com"

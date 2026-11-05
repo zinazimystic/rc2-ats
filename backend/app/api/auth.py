@@ -34,7 +34,7 @@ def register(body: RegisterIn, response: Response, request: Request, db: DB):
         if not hmac.compare_digest((body.invite_code or "").strip(), settings.recruiter_invite_code):
             raise Forbidden("A valid invite code is required to register as a recruiter", code="invalid_invite_code")
     ip = request.client.host if request.client else "unknown"
-    limiter.check(f"register:{ip}", 20, 3600, "Too many sign-ups from this address. Please try again later.")
+    limiter.check(f"register:{ip}", settings.register_rate_limit_per_hour, 3600, "Too many sign-ups from this address. Please try again later.")
     if db.scalar(select(User.id).where(User.email == body.email)):
         raise Conflict("An account with this email already exists", code="email_taken")
     user = User(email=body.email, password_hash=hash_password(body.password), full_name=body.full_name, role=body.role)
