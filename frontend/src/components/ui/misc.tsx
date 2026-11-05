@@ -41,7 +41,7 @@ export function EmptyState({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-col items-center gap-2 rounded-xl border border-dashed p-10 text-center", className)}>
+    <div className={cn("flex flex-col items-center gap-2 rounded-3xl border border-dashed bg-card/60 p-10 text-center", className)}>
       <div className="text-muted-foreground">{icon ?? <Inbox className="size-8" />}</div>
       <p className="font-medium">{title}</p>
       {description && <p className="max-w-md text-sm text-muted-foreground">{description}</p>}
@@ -51,7 +51,7 @@ export function EmptyState({
 }
 export function ErrorState({ error, retry }: { error: unknown; retry?: () => void }) {
   return (
-    <div role="alert" className="flex flex-col items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-8 text-center">
+    <div role="alert" className="flex flex-col items-center gap-3 rounded-3xl border border-destructive/30 bg-destructive/5 p-8 text-center">
       <AlertTriangle className="size-7 text-destructive" />
       <p className="max-w-md text-sm">{errMsg(error)}</p>
       {retry && (

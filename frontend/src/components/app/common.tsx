@@ -131,15 +131,57 @@ export function SkillChips({ skills, tone = "default", max = 6 }: { skills: stri
   );
 }
 
-export function Stat({ label, value, icon, hint }: { label: string; value: ReactNode; icon?: ReactNode; hint?: string }) {
+export function Stat({ label, value, icon, hint, highlight }: { label: string; value: ReactNode; icon?: ReactNode; hint?: string; highlight?: boolean }) {
   return (
-    <div className="rounded-xl border bg-card p-4 shadow-xs">
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
+    <div className={cn("rounded-2xl border p-5 shadow-soft transition-transform hover:-translate-y-0.5", highlight ? "border-transparent bg-primary text-primary-foreground" : "border-border/60 bg-card")}>
+      <div className={cn("flex items-center justify-between text-sm font-medium", highlight ? "text-white/85" : "text-muted-foreground")}>
         {label}
-        <span className="[&_svg]:size-4">{icon}</span>
+        <span className={cn("grid size-8 place-items-center rounded-full [&_svg]:size-4", highlight ? "bg-white/20" : "bg-muted")}>{icon}</span>
       </div>
-      <p className="mt-2 text-2xl font-semibold tabular-nums">{value}</p>
-      {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
+      <p className="mt-3 text-4xl font-semibold tracking-tight tabular-nums">{value}</p>
+      {hint && <p className={cn("mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-medium", highlight ? "bg-white/20 text-white" : "bg-success/12 text-success")}>{hint}</p>}
+    </div>
+  );
+}
+
+export function DateTile({ iso, className }: { iso: string; className?: string }) {
+  const d = new Date(iso);
+  return (
+    <div className={cn("grid size-14 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary", className)} aria-hidden>
+      <div className="text-center leading-none">
+        <p className="text-[10px] font-semibold tracking-wide uppercase">{d.toLocaleDateString(undefined, { weekday: "short" })}</p>
+        <p className="mt-0.5 text-xl font-bold tabular-nums">{d.getDate()}</p>
+      </div>
+    </div>
+  );
+}
+
+export function MatchBadge({ score }: { score: number }) {
+  const high = score >= 80;
+  return (
+    <span className={cn("inline-flex shrink-0 items-center rounded-full px-3 py-1 text-xs font-semibold tabular-nums", high ? "bg-success/15 text-success" : "bg-warning/20 text-[color-mix(in_oklab,var(--warning)_55%,var(--foreground))]")}>
+      {Math.round(score)}% Match
+    </span>
+  );
+}
+
+export function MiniCalendar({ marked = [] }: { marked?: string[] }) {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const first = new Date(y, m, 1).getDay();
+  const days = new Date(y, m + 1, 0).getDate();
+  const markSet = new Set(marked.map((iso) => new Date(iso).toDateString()));
+  const cells: (number | null)[] = [...Array(first).fill(null), ...Array.from({ length: days }, (_, i) => i + 1)];
+  return (
+    <div>
+      <p className="mb-3 text-center text-sm font-semibold">{now.toLocaleDateString(undefined, { month: "long", year: "numeric" })}</p>
+      <div className="grid grid-cols-7 gap-y-1 text-center text-xs">
+        {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => <span key={i} className="pb-1 font-medium text-muted-foreground">{d}</span>)}
+        {cells.map((d, i) => d === null ? <span key={i} /> : (
+          <span key={i} className={cn("mx-auto grid size-8 place-items-center rounded-full tabular-nums", d === now.getDate() ? "bg-primary font-semibold text-primary-foreground" : markSet.has(new Date(y, m, d).toDateString()) ? "bg-primary/10 font-semibold text-primary" : "text-foreground/80")}>{d}</span>
+        ))}
+      </div>
     </div>
   );
 }

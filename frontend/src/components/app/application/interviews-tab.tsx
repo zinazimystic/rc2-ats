@@ -13,6 +13,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Field, Input, Select, Textarea } from "@/components/ui/input";
 import { Banner, EmptyState, ErrorState, Skeleton } from "@/components/ui/misc";
 import { cn } from "@/lib/utils";
+import { DateTile } from "@/components/app/common";
+import { InterviewDetailDialog, InterviewStatusPill } from "@/components/app/application/interview-detail";
 
 const TYPES: InterviewType[] = ["technical", "hr", "behavioral", "panel", "final"];
 
@@ -128,7 +130,7 @@ export function FeedbackDialog({ iv, open, onOpenChange }: { iv: InterviewOut; o
   );
 }
 
-export function InterviewCard({ iv, onReschedule, onFeedback }: { iv: InterviewOut; onReschedule: () => void; onFeedback: () => void }) {
+export function InterviewCard({ iv, onReschedule, onFeedback, onDetails }: { iv: InterviewOut; onReschedule: () => void; onFeedback: () => void; onDetails?: () => void }) {
   const qc = useQueryClient();
   const upd = useMutation({
     mutationFn: (status: "cancelled" | "completed") => api<InterviewOut>(`/interviews/${iv.id}`, { method: "PATCH", body: { status } }),
@@ -139,8 +141,8 @@ export function InterviewCard({ iv, onReschedule, onFeedback }: { iv: InterviewO
     <Card className={cn(iv.status === "cancelled" && "opacity-60")}>
       <CardContent className="space-y-2 pt-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div><p className="font-medium">{titleCase(iv.interview_type)} interview with {iv.interviewer_name}</p><p className="text-sm text-muted-foreground">{fmtDateTime(iv.start_at)} → {fmtDateTime(iv.end_at)}{iv.location && ` · ${iv.location}`}</p></div>
-          <div className="flex gap-1"><Badge variant={iv.status === "scheduled" ? "default" : iv.status === "completed" ? "success" : "muted"}>{iv.status}</Badge>{iv.has_conflict && <Badge variant="warning">conflict</Badge>}</div>
+          <div className="flex items-center gap-3"><DateTile iso={iv.start_at} /><div><p className="font-semibold">{titleCase(iv.interview_type)} interview with {iv.interviewer_name}</p><p className="text-sm text-muted-foreground">{fmtDateTime(iv.start_at)} → {fmtDateTime(iv.end_at)}{iv.location && ` · ${iv.location}`}</p></div></div>
+          <div className="flex gap-1"><InterviewStatusPill status={iv.status} />{iv.has_conflict && <Badge variant="warning">conflict</Badge>}</div>
         </div>
         {iv.conflict_details.map((c, i) => <Banner key={i} tone="warning">{c.message}</Banner>)}
         {iv.feedback.map((f) => (
@@ -152,6 +154,7 @@ export function InterviewCard({ iv, onReschedule, onFeedback }: { iv: InterviewO
         ))}
         {iv.status !== "cancelled" && (
           <div className="flex flex-wrap gap-2 pt-1">
+            {onDetails && <Button size="sm" onClick={onDetails}>Details</Button>}
             {iv.status === "scheduled" && <Button size="sm" variant="outline" onClick={onReschedule}>Reschedule</Button>}
             {iv.status === "scheduled" && <Button size="sm" variant="outline" loading={upd.isPending} onClick={() => upd.mutate("completed")}>Mark completed</Button>}
             <Button size="sm" variant="outline" onClick={onFeedback}><MessageSquareText /> Feedback</Button>
@@ -166,6 +169,7 @@ export function InterviewCard({ iv, onReschedule, onFeedback }: { iv: InterviewO
 export function InterviewsTab({ appId, canSchedule }: { appId: string; canSchedule: boolean }) {
   const [sched, setSched] = useState<{ open: boolean; iv?: InterviewOut }>({ open: false });
   const [fb, setFb] = useState<InterviewOut | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
   const q = useQuery({ queryKey: ["interviews", "app", appId], queryFn: () => api<InterviewOut[]>(`/applications/${appId}/interviews`) });
   return (
     <div className="space-y-4">
@@ -174,7 +178,8 @@ export function InterviewsTab({ appId, canSchedule }: { appId: string; canSchedu
         <Button disabled={!canSchedule} onClick={() => setSched({ open: true })}><CalendarPlus /> Schedule interview</Button>
       </div>
       {q.isError ? <ErrorState error={q.error} retry={() => q.refetch()} /> : !q.data ? <Skeleton className="h-32" /> : q.data.length === 0 ? <EmptyState title="No interviews scheduled" /> :
-        q.data.map((iv) => <InterviewCard key={iv.id} iv={iv} onReschedule={() => setSched({ open: true, iv })} onFeedback={() => setFb(iv)} />)}
+        q.data.map((iv) => <InterviewCard key={iv.id} iv={iv} onReschedule={() => setSched({ open: true, iv })} onFeedback={() => setFb(iv)} onDetails={() => setDetailId(iv.id)} />)}
+      {(() => { const d = q.data?.find((x) => x.id === detailId); return d ? <InterviewDetailDialog iv={d} open onOpenChange={(o) => !o && setDetailId(null)} onReschedule={() => { setDetailId(null); setSched({ open: true, iv: d }); }} onFeedback={() => { setDetailId(null); setFb(d); }} /> : null; })()}
       {sched.open && <ScheduleDialog key={sched.iv?.id ?? "new"} appId={appId} existing={sched.iv} open onOpenChange={(o) => setSched({ open: o })} />}
       {fb && <FeedbackDialog key={fb.id} iv={fb} open onOpenChange={(o) => !o && setFb(null)} />}
     </div>
