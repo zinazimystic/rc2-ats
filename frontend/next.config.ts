@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  output: "standalone",
   turbopack: {
     rules: {
       "*.css": {
@@ -9,6 +9,17 @@ const nextConfig: NextConfig = {
         as: "*.css",
       },
     },
+  },
+  experimental: {
+    proxyTimeout: 180000,
+  },
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: `${process.env.API_URL ?? "http://localhost:8000"}/api/:path*`,
+      },
+    ];
   },
 };
 
