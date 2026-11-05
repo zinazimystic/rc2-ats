@@ -96,7 +96,8 @@ def my_match(db: Session, user: User, job_id: uuid.UUID, resume_id: uuid.UUID | 
         )
 
     interests = tuple(db.scalar(select(CandidateProfile.interests).where(CandidateProfile.user_id == user.id)) or ())
-    _, results, sc = search._score_against(job, resume, interests)
+    # full scoring (project relevance included) so this matches what the employer's assessment will compute
+    _, results, sc = search._score_against(job, resume, interests, with_projects=True)
     total = round(min(100.0, sc.total + search._interest_boost(interests, job)), 1)
     tax = taxonomy()
 

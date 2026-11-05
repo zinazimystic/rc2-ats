@@ -203,10 +203,10 @@ def talent_search(db: Session, recruiter: User, req: TalentSearchIn) -> TalentSe
 
 
 # --------------------------------------------------------------------------- scoring a resume against a job
-def _score_against(job: Job, resume: Resume, interests: tuple[str, ...] = ()):
+def _score_against(job: Job, resume: Resume, interests: tuple[str, ...] = (), *, with_projects: bool = False):
     jspec = builders.job_spec(job)
     cspec = builders.candidate_spec(resume, interests)
-    sem = builders.semantics(job, resume, cspec, with_projects=False)
+    sem = builders.semantics(job, resume, cspec, with_projects=with_projects)
     results = matcher.match_requirements(jspec, cspec, sem)
     sc = scorer.score(jspec, cspec, results, sem)
     return jspec, results, sc
