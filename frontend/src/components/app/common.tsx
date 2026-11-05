@@ -118,7 +118,7 @@ export function FlagList({ flags }: { flags: Flag[] }) {
 }
 
 export function SkillChips({ skills, tone = "default", max = 6 }: { skills: string[]; tone?: "default" | "success" | "destructive"; max?: number }) {
-  if (!skills.length) return <span className="text-xs text-muted-foreground">—</span>;
+  if (!skills.length) return <span className="text-[13px] text-muted-foreground">—</span>;
   const shown = skills.slice(0, max);
   return (
     <div className="flex flex-wrap gap-1">
@@ -138,7 +138,7 @@ export function Stat({ label, value, icon, hint, highlight }: { label: string; v
         <span className={cn("grid size-8 place-items-center rounded-full [&_svg]:size-4", highlight ? "bg-white/20" : "bg-muted")}>{icon}</span>
       </div>
       <p className="mt-3 text-4xl font-semibold tracking-tight tabular-nums">{value}</p>
-      {hint && <p className={cn("mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-medium", highlight ? "bg-white/20 text-white" : "bg-success/12 text-success")}>{hint}</p>}
+      {hint && <p className={cn("mt-2 inline-block rounded-full px-2.5 py-0.5 text-[13px] font-medium", highlight ? "bg-white/20 text-white" : "bg-success/12 text-success")}>{hint}</p>}
     </div>
   );
 }
@@ -148,7 +148,7 @@ export function DateTile({ iso, className }: { iso: string; className?: string }
   return (
     <div className={cn("grid size-14 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary", className)} aria-hidden>
       <div className="text-center leading-none">
-        <p className="text-[10px] font-semibold tracking-wide uppercase">{d.toLocaleDateString(undefined, { weekday: "short" })}</p>
+        <p className="text-[13px] font-semibold tracking-wide uppercase">{d.toLocaleDateString(undefined, { weekday: "short" })}</p>
         <p className="mt-0.5 text-xl font-bold tabular-nums">{d.getDate()}</p>
       </div>
     </div>
@@ -158,7 +158,7 @@ export function DateTile({ iso, className }: { iso: string; className?: string }
 export function MatchBadge({ score }: { score: number }) {
   const high = score >= 80;
   return (
-    <span className={cn("inline-flex shrink-0 items-center rounded-full px-3 py-1 text-xs font-semibold tabular-nums", high ? "bg-success/15 text-success" : "bg-warning/20 text-[color-mix(in_oklab,var(--warning)_55%,var(--foreground))]")}>
+    <span className={cn("inline-flex shrink-0 items-center rounded-full px-3 py-1 text-[13px] font-semibold tabular-nums", high ? "bg-success/15 text-success" : "bg-warning/20 text-[color-mix(in_oklab,var(--warning)_55%,var(--foreground))]")}>
       {Math.round(score)}% Match
     </span>
   );
@@ -175,7 +175,7 @@ export function MiniCalendar({ marked = [] }: { marked?: string[] }) {
   return (
     <div>
       <p className="mb-3 text-center text-sm font-semibold">{now.toLocaleDateString(undefined, { month: "long", year: "numeric" })}</p>
-      <div className="grid grid-cols-7 gap-y-1 text-center text-xs">
+      <div className="grid grid-cols-7 gap-y-1 text-center text-[13px]">
         {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => <span key={i} className="pb-1 font-medium text-muted-foreground">{d}</span>)}
         {cells.map((d, i) => d === null ? <span key={i} /> : (
           <span key={i} className={cn("mx-auto grid size-8 place-items-center rounded-full tabular-nums", d === now.getDate() ? "bg-primary font-semibold text-primary-foreground" : markSet.has(new Date(y, m, d).toDateString()) ? "bg-primary/10 font-semibold text-primary" : "text-foreground/80")}>{d}</span>

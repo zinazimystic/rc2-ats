@@ -7,7 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.db.types import utcnow
-from app.models import Application, CandidateProfile, Job, Notification, Resume, User
+from app.models import Application, CandidateProfile, Job, Notification, Resume, User, job_vector_options
 from app.schemas.dashboard import CandidateDashboardOut, UpcomingInterviewOut
 from app.services import applications as app_service
 from app.services import jobs as job_service
@@ -71,7 +71,7 @@ def build(db: Session, user: User) -> CandidateDashboardOut:
 
     jobs = list(
         db.scalars(
-            select(Job).where(Job.status == "open").options(joinedload(Job.requirements)).order_by(Job.created_at.desc()).limit(OPEN_JOBS_SCORED)
+            select(Job).where(Job.status == "open").options(*job_vector_options(join=True)).order_by(Job.created_at.desc()).limit(OPEN_JOBS_SCORED)
         ).unique()
     )
     applied_active = {a.job_id for a in apps if a.status != "withdrawn"}

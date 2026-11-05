@@ -2,7 +2,7 @@ import uuid
 from typing import Optional
 
 from sqlalchemy import Float, ForeignKey, Integer, String, Text, Uuid
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, deferred, joinedload, mapped_column, relationship, selectinload, undefer
 
 from app.db.base import Base, IdMixin, TimestampMixin
 from app.db.types import Embedding, JSONType
@@ -29,7 +29,7 @@ class Job(Base, IdMixin, TimestampMixin):
     weights: Mapped[dict] = mapped_column(JSONType, default=lambda: dict(DEFAULT_WEIGHTS))
     status: Mapped[str] = mapped_column(String(10), default="open", index=True)  # open | closed
     version: Mapped[int] = mapped_column(Integer, default=1)
-    embedding: Mapped[Optional[list]] = mapped_column(Embedding)
+    embedding: Mapped[Optional[list]] = deferred(mapped_column(Embedding))  # vectors are heavy: load via undefer only when scoring
 
     requirements: Mapped[list["JobRequirement"]] = relationship(
         back_populates="job", cascade="all, delete-orphan", order_by="JobRequirement.position"
@@ -44,6 +44,13 @@ class JobRequirement(Base, IdMixin):
     kind: Mapped[str] = mapped_column(String(10), default="required")  # required | preferred
     importance: Mapped[int] = mapped_column(Integer, default=3)  # 1..5
     position: Mapped[int] = mapped_column(Integer, default=0)
-    embedding: Mapped[Optional[list]] = mapped_column(Embedding)
+    embedding: Mapped[Optional[list]] = deferred(mapped_column(Embedding))  # vectors are heavy: load via undefer only when scoring
 
     job: Mapped[Job] = relationship(back_populates="requirements")
+
+
+def job_vector_options(*, join: bool = False):
+    """Loader options for code that SCORES a job: the job's requirements plus the (deferred) embedding vectors, in one go.
+    Everything else (lists, detail pages, counts) leaves the heavy vectors on the server."""
+    loader = joinedload(Job.requirements) if join else selectinload(Job.requirements)
+    return (undefer(Job.embedding), loader.undefer(JobRequirement.embedding))

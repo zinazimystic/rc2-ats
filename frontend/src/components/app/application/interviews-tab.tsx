@@ -148,7 +148,7 @@ export function InterviewCard({ iv, onReschedule, onFeedback, onDetails }: { iv:
         {iv.feedback.map((f) => (
           <div key={f.id} className="rounded-md bg-muted/50 p-2 text-sm">
             <p className="font-medium">{f.author_name} — <Badge variant={f.recommendation.includes("yes") ? "success" : "destructive"}>{titleCase(f.recommendation)}</Badge></p>
-            <p className="text-xs text-muted-foreground">{Object.entries(f.ratings).map(([k, v]) => `${titleCase(k)} ${v}/5`).join(" · ")}</p>
+            <p className="text-[13px] text-muted-foreground">{Object.entries(f.ratings).map(([k, v]) => `${titleCase(k)} ${v}/5`).join(" · ")}</p>
             {f.comments && <p className="mt-1">{f.comments}</p>}
           </div>
         ))}

@@ -4,11 +4,11 @@ from __future__ import annotations
 import uuid
 from collections import Counter, defaultdict
 
-from sqlalchemy import select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
 
 from app.db.types import utcnow
-from app.models import Application, AuditEvent, Interview, Job, User
+from app.models import Application, Assessment, AuditEvent, Interview, Job, User
 from app.schemas.analytics import (
     ActivityItem,
     AnalyticsOut,
@@ -32,29 +32,33 @@ def _bucket(score: float) -> str:
 
 
 def overview(db: Session, recruiter: User, job: Job | None = None) -> AnalyticsOut:
-    jobs = db.scalars(select(Job).where(Job.recruiter_id == recruiter.id).order_by(Job.created_at.desc())).all()
-    scope_jobs = [job] if job else list(jobs)
+    scope_jobs = [job] if job else list(
+        db.scalars(select(Job).where(Job.recruiter_id == recruiter.id).order_by(Job.created_at.desc())).all()
+    )
     job_ids = [j.id for j in scope_jobs]
-    apps: list[Application] = []
+    # Column-only selects (no ORM entities): the assessment JSON is the only heavy part and is read once, for skill gaps.
+    apps: list = []
+    asm_by_app: dict[uuid.UUID, tuple[float, list]] = {}
     if job_ids:
-        apps = list(
-            db.scalars(
-                select(Application)
-                .where(Application.job_id.in_(job_ids), Application.status != "withdrawn")
-                .options(selectinload(Application.assessment))
-            ).all()
-        )
+        apps = db.execute(
+            select(Application.id, Application.job_id, Application.status, Application.created_at, Application.assessed_at, Application.decided_at)
+            .where(Application.job_id.in_(job_ids), Application.status != "withdrawn")
+        ).all()
+        for app_id, total, override, reqs in db.execute(
+            select(Assessment.application_id, Assessment.total_score, Assessment.override_score, Assessment.requirements)
+            .join(Application, Application.id == Assessment.application_id)
+            .where(Application.job_id.in_(job_ids), Application.status != "withdrawn")
+        ).all():
+            asm_by_app[app_id] = (override if override is not None else total, reqs or [])
 
     now = utcnow()
     upcoming = 0
     if job_ids:
-        upcoming = len(
-            db.scalars(
-                select(Interview.id)
-                .join(Application, Application.id == Interview.application_id)
-                .where(Application.job_id.in_(job_ids), Interview.status == "scheduled", Interview.end_at >= now)
-            ).all()
-        )
+        upcoming = db.scalar(
+            select(func.count(Interview.id))
+            .join(Application, Application.id == Interview.application_id)
+            .where(Application.job_id.in_(job_ids), Interview.status == "scheduled", Interview.end_at >= now)
+        ) or 0
 
     by_status = Counter(a.status for a in apps)
     kpis = Kpis(
@@ -80,12 +84,13 @@ def overview(db: Session, recruiter: User, job: Job | None = None) -> AnalyticsO
     proc = [(a.assessed_at - a.created_at).total_seconds() for a in apps if a.assessed_at]
     decide = [(a.decided_at - a.created_at).total_seconds() / 3600 for a in apps if a.decided_at]
 
-    assessed = [a for a in apps if a.assessment is not None]
+    assessed = [a for a in apps if a.id in asm_by_app]
     gap_counter: Counter = Counter()
     dist: Counter = Counter()
     for a in assessed:
-        dist[_bucket(a.assessment.effective_score)] += 1
-        for r in a.assessment.requirements or []:
+        score, reqs = asm_by_app[a.id]
+        dist[_bucket(score)] += 1
+        for r in reqs:
             if r.get("kind") == "required" and r.get("status") in ("missing_evidence", "confirmed_absent"):
                 gap_counter[r["skill"]] += 1
     gaps = [

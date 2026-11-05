@@ -40,7 +40,7 @@ export function MatchBars({ components }: { components: MyMatchOut["components"]
         const v = components[k] as number;
         return (
           <li key={k}>
-            <div className="mb-1 flex justify-between text-xs"><span className="font-medium">{label}</span><span className={cn("font-semibold tabular-nums", scoreTone(v))}>{fmtScore(v)}</span></div>
+            <div className="mb-1 flex justify-between text-[13px]"><span className="font-medium">{label}</span><span className={cn("font-semibold tabular-nums", scoreTone(v))}>{fmtScore(v)}</span></div>
             <div className="h-1.5 overflow-hidden rounded-full bg-muted" role="progressbar" aria-label={label} aria-valuenow={Math.round(v)} aria-valuemin={0} aria-valuemax={100}>
               <div className={cn("h-full rounded-full", scoreBg(v))} style={{ width: `${Math.max(0, Math.min(100, v))}%` }} />
             </div>
@@ -81,7 +81,7 @@ function MatchBody({ m }: { m: MyMatchOut }) {
           <ScoreRing value={m.score} label="Estimated fit" />
           <div>
             <p className={cn("text-lg font-semibold", bandTone(m.band))}>{BAND_LABEL[m.band] ?? "Estimated fit"}</p>
-            <p className="max-w-[14rem] text-xs text-muted-foreground">Estimated fit based on your resume. The employer’s review may differ.</p>
+            <p className="max-w-[14rem] text-[13px] text-muted-foreground">Estimated fit based on your resume. The employer’s review may differ.</p>
           </div>
         </div>
         <div className="flex min-w-48 flex-1"><MatchBars components={m.components} /></div>
@@ -95,9 +95,9 @@ function MatchBody({ m }: { m: MyMatchOut }) {
               <li key={r.skill + r.kind} className="flex flex-wrap items-start gap-x-3 gap-y-1 px-3.5 py-2.5 text-sm">
                 <span className="font-medium">{r.skill}</span>
                 {r.kind === "preferred" && <Badge variant="muted">Nice to have</Badge>}
-                {r.matched_as && r.matched_as.toLowerCase() !== r.skill.toLowerCase() && <span className="text-xs text-muted-foreground">via {r.matched_as}</span>}
+                {r.matched_as && r.matched_as.toLowerCase() !== r.skill.toLowerCase() && <span className="text-[13px] text-muted-foreground">via {r.matched_as}</span>}
                 <span className="ml-auto"><EvidenceBadge status={r.status} /></span>
-                {r.evidence && <p className="w-full truncate text-xs text-muted-foreground italic" title={r.evidence}>“{r.evidence}”</p>}
+                {r.evidence && <p className="w-full truncate text-[13px] text-muted-foreground italic" title={r.evidence}>“{r.evidence}”</p>}
               </li>
             ))}
           </ul>

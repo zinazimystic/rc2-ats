@@ -117,9 +117,55 @@ def test_email_code_expiry_attempts_and_rate_limit(make_client, db):
     _set(db, User, _u.UUID(uid), email_code_expires_at=utcnow() - timedelta(minutes=1))
     invalidate_user(_u.UUID(uid))
     assert c.post("/api/auth/email/verify", json={"code": "123456"}).json()["code"] == "code_expired"
-    assert c.post("/api/auth/email/send-code").status_code == 200
-    assert c.post("/api/auth/email/send-code").status_code == 200
-    assert c.post("/api/auth/email/send-code").status_code == 429
+    assert c.post("/api/auth/email/send-code").status_code == 200  # expired code: a new one may be requested
+    # a second request within the 60 s cooldown is refused with retry_after
+    r = c.post("/api/auth/email/send-code")
+    assert r.status_code == 429 and r.json()["code"] == "resend_too_soon" and 0 < r.json()["retry_after"] <= 60
+    # at most 5 sends per 15 minutes: move the cooldown out of the way each time
+    for _ in range(3):
+        _set(db, User, _u.UUID(uid), email_code_expires_at=utcnow() - timedelta(minutes=1))
+        invalidate_user(_u.UUID(uid))
+        assert c.post("/api/auth/email/send-code").status_code == 200
+    _set(db, User, _u.UUID(uid), email_code_expires_at=utcnow() - timedelta(minutes=1))
+    invalidate_user(_u.UUID(uid))
+    r = c.post("/api/auth/email/send-code")
+    assert r.status_code == 429 and r.json()["code"] == "rate_limited"
+
+
+def test_email_code_smtp_path_and_delivery_failure_restores_previous_code(make_client, db, monkeypatch):
+    import uuid as _u
+    from datetime import timedelta
+
+    from app.core.config import settings
+    from app.core.deps import invalidate_user
+    from app.db.types import utcnow
+    from app.models import User
+    from app.services import mailer
+
+    for k, v in dict(smtp_host="smtp.test", smtp_user="u", smtp_password="p", smtp_from_email="no-reply@test.example").items():
+        monkeypatch.setattr(settings, k, v)
+    sent = []
+    monkeypatch.setattr("app.api.auth.send_email", lambda to, subject, text, html_body=None: sent.append((to, text)))
+    c = make_client("candidate", "smtp@example.com", "Sam Smtp")
+    uid = _u.UUID(c.get("/api/auth/me").json()["id"])
+    r = c.post("/api/auth/email/send-code")
+    assert r.status_code == 200 and r.json()["delivery"] == "email" and len(sent) == 1 and sent[0][0] == "smtp@example.com"
+    import re
+    code = re.search(r"(\d{6})", sent[0][1]).group(1)
+    before = db.get(User, uid)
+    db.refresh(before)
+    old_hash = before.email_code_hash
+    _set(db, User, uid, email_code_expires_at=utcnow() + timedelta(seconds=1))  # inside the validity window, cooldown over
+    invalidate_user(uid)
+
+    def boom(*a, **k):
+        raise mailer.EmailDeliveryError("down")
+
+    monkeypatch.setattr("app.api.auth.send_email", boom)
+    r = c.post("/api/auth/email/send-code")
+    assert r.status_code == 503 and r.json()["code"] == "email_delivery_failed"
+    db.expire_all()
+    assert db.get(User, uid).email_code_hash == old_hash  # the previous code still works
 
 
 # --------------------------------------------------------------------------- profile

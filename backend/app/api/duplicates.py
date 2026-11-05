@@ -3,12 +3,13 @@ from __future__ import annotations
 import uuid
 from typing import Literal
 
-from fastapi import APIRouter
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload
+from fastapi import APIRouter, Response
+from sqlalchemy import func, select
+from sqlalchemy.orm import joinedload
 
 from app.core.deps import DB, Recruiter
 from app.core.errors import Conflict, NotFound
+from app.core.pagination import Limit, Offset, set_total
 from app.models import Application, DuplicateFlag, Job, User
 from app.schemas.analytics import DuplicateOut
 from app.services import duplicates
@@ -18,12 +19,9 @@ from app.services.audit import log_event
 router = APIRouter(prefix="/duplicates", tags=["duplicates"])
 
 
-def _visible_candidate_ids(db, recruiter) -> set[uuid.UUID]:
-    return set(
-        db.scalars(
-            select(Application.candidate_id).join(Job, Job.id == Application.job_id).where(Job.recruiter_id == recruiter.id)
-        ).all()
-    )
+def _visible_candidates(recruiter):
+    """Subquery of the candidates a recruiter may see here (applicants to their jobs): evaluated inside the database."""
+    return select(Application.candidate_id).join(Job, Job.id == Application.job_id).where(Job.recruiter_id == recruiter.id)
 
 
 def _out(flag: DuplicateFlag, users: dict[uuid.UUID, User]) -> DuplicateOut:
@@ -38,31 +36,33 @@ def _users(db, flags) -> dict[uuid.UUID, User]:
     ids = {f.candidate_a_id for f in flags} | {f.candidate_b_id for f in flags}
     if not ids:
         return {}
-    rows = db.scalars(select(User).where(User.id.in_(ids)).options(selectinload(User.profile))).all()
+    rows = db.scalars(select(User).where(User.id.in_(ids)).options(joinedload(User.profile))).unique().all()
     return {u.id: u for u in rows}
 
 
 def _flag_for(db, recruiter, flag_id: uuid.UUID) -> DuplicateFlag:
-    flag = db.get(DuplicateFlag, flag_id)
+    visible = _visible_candidates(recruiter)
+    flag = db.scalar(
+        select(DuplicateFlag).where(
+            DuplicateFlag.id == flag_id, DuplicateFlag.candidate_a_id.in_(visible) | DuplicateFlag.candidate_b_id.in_(visible)
+        )
+    )
     if flag is None:
-        raise NotFound("Duplicate flag not found")
-    visible = _visible_candidate_ids(db, recruiter)
-    if flag.candidate_a_id not in visible and flag.candidate_b_id not in visible:
         raise NotFound("Duplicate flag not found")
     return flag
 
 
 @router.get("", response_model=list[DuplicateOut])
-def list_duplicates(db: DB, user: Recruiter, status: Literal["pending", "confirmed", "dismissed", "all"] = "pending"):
-    visible = _visible_candidate_ids(db, user)
-    if not visible:
-        return []
-    stmt = select(DuplicateFlag).where(
-        DuplicateFlag.candidate_a_id.in_(visible) | DuplicateFlag.candidate_b_id.in_(visible)
-    ).order_by(DuplicateFlag.created_at.desc())
+def list_duplicates(
+    response: Response, db: DB, user: Recruiter,
+    status: Literal["pending", "confirmed", "dismissed", "all"] = "pending", limit: Limit = 200, offset: Offset = 0,
+):
+    visible = _visible_candidates(user)
+    where = [DuplicateFlag.candidate_a_id.in_(visible) | DuplicateFlag.candidate_b_id.in_(visible)]
     if status != "all":
-        stmt = stmt.where(DuplicateFlag.status == status)
-    flags = list(db.scalars(stmt).all())
+        where.append(DuplicateFlag.status == status)
+    flags = list(db.scalars(select(DuplicateFlag).where(*where).order_by(DuplicateFlag.created_at.desc()).limit(limit).offset(offset)).all())
+    set_total(response, len(flags), limit, offset, lambda: db.scalar(select(func.count()).select_from(DuplicateFlag).where(*where)) or 0)
     users = _users(db, flags)
     return [_out(f, users) for f in flags if f.candidate_a_id in users and f.candidate_b_id in users]
 

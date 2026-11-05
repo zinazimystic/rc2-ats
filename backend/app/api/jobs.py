@@ -3,12 +3,13 @@ from __future__ import annotations
 import uuid
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import joinedload, selectinload
 
 from app.core.deps import DB, Candidate, CurrentUser, Recruiter
 from app.core.errors import Conflict, NotFound, ServiceUnavailable, Unprocessable
+from app.core.pagination import Limit, Offset, set_total
 from app.models import Application, Job, Notification, Resume, User
 from app.schemas.application import ApplicationRowOut, CompareOut, JobApplicantsOut
 from app.schemas.common import Msg
@@ -30,8 +31,11 @@ router = APIRouter(prefix="/jobs", tags=["jobs"])
 def list_jobs(
     db: DB,
     user: CurrentUser,
+    response: Response,
     status: Literal["open", "closed"] | None = None,
     q: Annotated[str | None, Query(max_length=100)] = None,
+    limit: Limit = 200,
+    offset: Offset = 0,
 ):
     """Round trips: jobs+requirements (+has_applied flag for candidates) in ONE query; recruiters add one for the counts."""
     stmt = select(Job).options(joinedload(Job.requirements)).order_by(Job.created_at.desc())
@@ -45,9 +49,14 @@ def list_jobs(
     if q and q.strip():
         like = f"%{q.strip().lower()}%"
         stmt = stmt.where(or_(func.lower(Job.title).like(like), func.lower(Job.department).like(like), func.lower(Job.location).like(like)))
+    count_stmt = select(func.count()).select_from(stmt.order_by(None).with_only_columns(Job.id).subquery())
+    stmt = stmt.limit(limit).offset(offset)
     if user.role == "recruiter":
-        return job_service.to_list_items(db, list(db.scalars(stmt).unique().all()), user)
+        jobs = list(db.scalars(stmt).unique().all())
+        set_total(response, len(jobs), limit, offset, lambda: db.scalar(count_stmt) or 0)
+        return job_service.to_list_items(db, jobs, user)
     rows = db.execute(stmt).unique().all()
+    set_total(response, len(rows), limit, offset, lambda: db.scalar(count_stmt) or 0)
     return job_service.to_list_items(db, [r[0] for r in rows], user, applied={r[0].id for r in rows if r[1]})
 
 
@@ -78,7 +87,7 @@ def extract_requirements(body: JobExtractIn, user: Recruiter):
 def _visible_job(db, user, job_id: uuid.UUID) -> Job:
     if user.role == "recruiter":
         return get_owned_job(db, user, job_id)
-    job = db.scalar(select(Job).options(selectinload(Job.requirements)).where(Job.id == job_id))
+    job = db.scalars(select(Job).options(joinedload(Job.requirements)).where(Job.id == job_id)).unique().first()
     if job is None:
         raise NotFound("Job not found")
     if job.status != "open":
@@ -122,6 +131,7 @@ def reopen_job(job_id: uuid.UUID, db: DB, user: Recruiter):
 @router.get("/{job_id}/applications", response_model=JobApplicantsOut)
 def job_applications(
     job_id: uuid.UUID,
+    response: Response,
     db: DB,
     user: Recruiter,
     status: str | None = None,
@@ -129,14 +139,16 @@ def job_applications(
     skill: Annotated[str | None, Query(max_length=80)] = None,
     q: Annotated[str | None, Query(max_length=100)] = None,
     sort: Literal["score", "date", "name"] = "score",
+    limit: Limit = 200,
+    offset: Offset = 0,
 ):
     job = get_owned_job(db, user, job_id)
     apps = list(
         db.scalars(
             select(Application)
             .where(Application.job_id == job.id)
-            .options(*app_service.list_load_options(), selectinload(Application.resume).selectinload(Resume.skills))
-        ).all()
+            .options(*app_service.list_load_options(skills=bool(skill and skill.strip())))
+        ).unique().all()
     )
     counts: dict[str, int] = {}
     for a in apps:
@@ -169,7 +181,10 @@ def job_applications(
         rows.sort(key=lambda a: (a.assessment is None, -(a.assessment.effective_score if a.assessment else 0), a.created_at))
     from app.services.access import job_brief
 
-    return JobApplicantsOut(job=job_brief(job), total=len(rows), status_counts=counts, items=[app_service.to_row(a) for a in rows])
+    total = len(rows)  # filtered total (the page below slices it)
+    response.headers["X-Total-Count"] = str(total)
+    page = rows[offset: offset + limit]
+    return JobApplicantsOut(job=job_brief(job), total=total, status_counts=counts, items=[app_service.to_row(a) for a in page])
 
 
 @router.get("/{job_id}/compare", response_model=CompareOut)
@@ -185,8 +200,8 @@ def compare(job_id: uuid.UUID, db: DB, user: Recruiter, ids: Annotated[str, Quer
         db.scalars(
             select(Application)
             .where(Application.job_id == job.id, Application.id.in_(wanted))
-            .options(*app_service.list_load_options(), selectinload(Application.resume).selectinload(Resume.skills))
-        ).all()
+            .options(*app_service.list_load_options(full_resume=True))
+        ).unique().all()
     )
     if len(apps) != len(wanted):
         raise NotFound("One or more applications were not found for this job")
@@ -199,7 +214,7 @@ def compare(job_id: uuid.UUID, db: DB, user: Recruiter, ids: Annotated[str, Quer
 
 @router.get("/{job_id}/talent-pool", response_model=list[TalentPoolItem])
 def talent_pool(job_id: uuid.UUID, db: DB, user: Recruiter):
-    job = get_owned_job(db, user, job_id)
+    job = get_owned_job(db, user, job_id, vectors=True)
     return search.talent_pool(db, job, user)
 
 

@@ -54,7 +54,7 @@ function SectionTitle({ children, hint }: { children: React.ReactNode; hint?: st
   return (
     <div>
       <h3 className="text-sm font-semibold tracking-wide uppercase">{children}</h3>
-      {hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}
+      {hint && <p className="mt-0.5 text-[13px] text-muted-foreground">{hint}</p>}
     </div>
   );
 }
@@ -97,14 +97,14 @@ function SkillsSection({ resume }: { resume: ResumeDetailOut }) {
         {skills.map((s) => (
           <li key={s.id} className={cn("group inline-flex items-center gap-1 rounded-full border py-1 pr-1 pl-3 text-sm", CHIP[s.verification], s.presence === "absent" && "opacity-70")} title={`${CHIP_LABEL[s.verification]}${s.evidence ? `: “${s.evidence}”` : ""}`}>
             <span className={cn("font-medium", s.presence === "absent" && "line-through")}>{s.name}</span>
-            {s.presence === "absent" && <span className="text-[11px] text-muted-foreground">not having</span>}
+            {s.presence === "absent" && <span className="text-[13px] text-muted-foreground">not having</span>}
             {s.verification !== "verified" && s.presence === "present" && (
               <button type="button" aria-label={`Confirm ${s.name}`} title="I have this skill" onClick={() => patch.mutate({ id: s.id, b: { confirm: true } })} className="grid size-6 place-items-center rounded-full text-success hover:bg-success/15"><Check className="size-3.5" /></button>
             )}
             {s.presence === "present" ? (
-              <button type="button" onClick={() => patch.mutate({ id: s.id, b: { presence: "absent" } })} className="rounded-full px-1.5 text-[11px] text-muted-foreground hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10">I don’t have this</button>
+              <button type="button" onClick={() => patch.mutate({ id: s.id, b: { presence: "absent" } })} className="rounded-full px-1.5 text-[13px] text-muted-foreground hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10">I don’t have this</button>
             ) : (
-              <button type="button" onClick={() => patch.mutate({ id: s.id, b: { presence: "present" } })} className="rounded-full px-1.5 text-[11px] text-primary hover:bg-primary/10">I have this</button>
+              <button type="button" onClick={() => patch.mutate({ id: s.id, b: { presence: "present" } })} className="rounded-full px-1.5 text-[13px] text-primary hover:bg-primary/10">I have this</button>
             )}
             <button type="button" aria-label={`Remove ${s.name}`} onClick={() => del.mutate(s.id)} className="grid size-6 place-items-center rounded-full text-muted-foreground hover:bg-destructive/15 hover:text-destructive"><X className="size-3.5" /></button>
           </li>
@@ -251,7 +251,7 @@ function ReviewForm({ resume, onDirty, onClose, onSaved }: { resume: ResumeDetai
         </section>
       </SheetBody>
       <SheetFooter>
-        {dirty && <span className="mr-auto text-xs text-muted-foreground">Unsaved changes</span>}
+        {dirty && <span className="mr-auto text-[13px] text-muted-foreground">Unsaved changes</span>}
         <Button variant="outline" onClick={onClose}>Cancel</Button>
         <Button loading={save.isPending} disabled={!dirty} onClick={submit}>Save changes</Button>
       </SheetFooter>

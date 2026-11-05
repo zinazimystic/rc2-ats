@@ -2,22 +2,14 @@
 import { keepPreviousData, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { api, ApiError, qs } from "./api";
+import { qk } from "./query-keys";
 import type {
   AnalyticsOut, CandidateApplicationOut, CandidateDashboardOut, JobListItem, JobOut, MyMatchOut, ProfileOut, RecommendationOut, ResumeOut, UpcomingInterview,
 } from "./types";
 
 export const STALE = 45_000;
 
-export const qk = {
-  dashboard: ["candidate-dashboard"] as const,
-  profile: ["profile"] as const,
-  resumes: ["resumes"] as const,
-  applications: ["my-applications"] as const,
-  recommendations: ["recommendations"] as const,
-  openJobs: ["jobs", "open"] as const,
-  job: (id: string) => ["job", id] as const,
-  match: (jobId: string, resumeId: string | null) => ["my-match", jobId, resumeId ?? "default"] as const,
-};
+export { qk };
 
 const processing = (r: ResumeOut) => r.parse_status === "pending" || r.parse_status === "processing";
 const appBusy = (a: CandidateApplicationOut) => a.processing_state === "queued" || a.processing_state === "processing";

@@ -36,7 +36,7 @@ function Compare() {
               <ScoreRing value={c.effective_score} />
               <Link className="font-semibold hover:underline" href={`/recruiter/applications/${c.application_id}`}>{c.candidate.full_name}</Link>
               <StatusBadge status={c.status} />
-              <p className="text-xs text-muted-foreground">Skills {fmtScore(c.components.skills)} · Exp {fmtScore(c.components.experience)} · Proj {fmtScore(c.components.projects)} · Qual {fmtScore(c.components.qualifications)}</p>
+              <p className="text-[13px] text-muted-foreground">Skills {fmtScore(c.components.skills)} · Exp {fmtScore(c.components.experience)} · Proj {fmtScore(c.components.projects)} · Qual {fmtScore(c.components.qualifications)}</p>
             </CardContent>
           </Card>
         ))}
@@ -48,15 +48,15 @@ function Compare() {
           <TBody>
             {[...skills.entries()].map(([s, meta]) => (
               <TR key={s}>
-                <TD className="align-top"><span className="font-medium">{s}</span><p className="text-xs text-muted-foreground">{meta.kind} · imp. {meta.importance}</p></TD>
+                <TD className="align-top"><span className="font-medium">{s}</span><p className="text-[13px] text-muted-foreground">{meta.kind} · imp. {meta.importance}</p></TD>
                 {candidates.map((c) => {
                   const r = find(c, s);
                   return (
                     <TD key={c.application_id} className="align-top">
                       {r ? (<>
-                        <div className="flex items-center gap-2"><EvidenceBadge status={r.status} /><span className="text-xs text-muted-foreground">{Math.round(r.credit * 100)}%</span></div>
-                        {r.evidence[0] && <blockquote className="mt-1 border-l-2 pl-2 text-xs text-muted-foreground italic">“{r.evidence[0].quote}”</blockquote>}
-                      </>) : <span className="text-xs text-muted-foreground">—</span>}
+                        <div className="flex items-center gap-2"><EvidenceBadge status={r.status} /><span className="text-[13px] text-muted-foreground">{Math.round(r.credit * 100)}%</span></div>
+                        {r.evidence[0] && <blockquote className="mt-1 border-l-2 pl-2 text-[13px] text-muted-foreground italic">“{r.evidence[0].quote}”</blockquote>}
+                      </>) : <span className="text-[13px] text-muted-foreground">—</span>}
                     </TD>
                   );
                 })}
@@ -70,9 +70,9 @@ function Compare() {
           <Card key={c.application_id}>
             <CardContent className="space-y-3 pt-5 text-sm">
               <p className="font-semibold">{c.candidate.full_name}</p>
-              <div><p className="text-xs font-medium text-success uppercase">Strengths</p><ul className="list-disc pl-4">{c.strengths.length ? c.strengths.map((s, i) => <li key={i}>{s}</li>) : <li className="list-none text-muted-foreground">—</li>}</ul></div>
-              <div><p className="text-xs font-medium text-destructive uppercase">Gaps</p><ul className="list-disc pl-4">{c.gaps.length ? c.gaps.map((s, i) => <li key={i}>{s}</li>) : <li className="list-none text-muted-foreground">—</li>}</ul></div>
-              {c.missing_information.length > 0 && <div><p className="text-xs font-medium text-warning uppercase">Missing information</p><ul className="list-disc pl-4">{c.missing_information.map((s, i) => <li key={i}>{s}</li>)}</ul></div>}
+              <div><p className="text-[13px] font-medium text-success uppercase">Strengths</p><ul className="list-disc pl-4">{c.strengths.length ? c.strengths.map((s, i) => <li key={i}>{s}</li>) : <li className="list-none text-muted-foreground">—</li>}</ul></div>
+              <div><p className="text-[13px] font-medium text-destructive uppercase">Gaps</p><ul className="list-disc pl-4">{c.gaps.length ? c.gaps.map((s, i) => <li key={i}>{s}</li>) : <li className="list-none text-muted-foreground">—</li>}</ul></div>
+              {c.missing_information.length > 0 && <div><p className="text-[13px] font-medium text-warning uppercase">Missing information</p><ul className="list-disc pl-4">{c.missing_information.map((s, i) => <li key={i}>{s}</li>)}</ul></div>}
               <FlagList flags={c.flags} />
             </CardContent>
           </Card>

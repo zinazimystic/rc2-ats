@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     deepseek_model: str = "deepseek-flash"
     llm_timeout_seconds: float = 90.0
     deepseek_fallback_model: str = ""  # optional stronger model tried once when the primary cannot produce valid JSON
+    chat_enabled: bool = True  # in-app assistant (falls back to a small FAQ without an API key)
+    chat_model: str = ""  # empty -> deepseek_model
+    chat_max_tokens: int = 700
     default_phone_region: str = "PK"  # ISO region assumed for phone numbers without a country code
 
     # Outgoing email (SMTP). When unset, verification codes fall back to the simulated outbox.

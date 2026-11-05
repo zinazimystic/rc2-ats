@@ -6,10 +6,10 @@ import uuid
 from typing import Callable
 
 from sqlalchemy import exists, or_, select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.core.errors import NotFound
-from app.models import Application, CandidateProfile, Interview, InterviewQuestion, Job, RecruiterNote, Resume, User
+from app.models import Application, CandidateProfile, Interview, InterviewFeedback, InterviewQuestion, Job, RecruiterNote, Resume, User
 from app.schemas.common import CandidateBrief, JobBrief
 
 log = logging.getLogger("app.access")
@@ -48,30 +48,43 @@ def parse_uuid(value: str | uuid.UUID) -> uuid.UUID:
 
 
 # ----------------------------------------------------------------------------- recruiter-owned objects
-def get_owned_job(db: Session, recruiter: User, job_id: uuid.UUID) -> Job:
-    job = db.scalar(select(Job).options(selectinload(Job.requirements)).where(Job.id == job_id))
+def get_owned_job(db: Session, recruiter: User, job_id: uuid.UUID, *, vectors: bool = False) -> Job:
+    """Owned job + requirements in ONE query (404 for anyone else). `vectors=True` also loads the deferred embeddings (scoring)."""
+    from app.models import job_vector_options
+
+    opts = job_vector_options(join=True) if vectors else (joinedload(Job.requirements),)
+    job = db.scalars(select(Job).options(*opts).where(Job.id == job_id)).unique().first()
     if job is None or job.recruiter_id != recruiter.id:
         raise NotFound("Job not found")
     return job
 
 
-def get_owned_application(db: Session, recruiter: User, application_id: uuid.UUID) -> Application:
-    app = db.scalar(
+def get_owned_application(db: Session, recruiter: User, application_id: uuid.UUID, *options) -> Application:
+    """The application with its job, candidate and the candidate's profile in ONE query (many-to-one joins add no round trips).
+    Extra loader options (assessment, notes ...) ride along."""
+    app = db.scalars(
         select(Application)
-        .options(selectinload(Application.job), selectinload(Application.candidate).selectinload(User.profile))
+        .options(joinedload(Application.job), joinedload(Application.candidate).joinedload(User.profile), *options)
         .where(Application.id == application_id)
-    )
+    ).unique().first()
     if app is None or app.job is None or app.job.recruiter_id != recruiter.id:
         raise NotFound("Application not found")
     return app
 
 
 def get_owned_interview(db: Session, recruiter: User, interview_id: uuid.UUID) -> Interview:
-    iv = db.scalar(select(Interview).where(Interview.id == interview_id))
-    if iv is None:
+    """Interview + its application (job, candidate, profile) + feedback in one query; 404 when the recruiter does not own the job."""
+    iv = db.scalars(
+        select(Interview)
+        .options(
+            joinedload(Interview.application).joinedload(Application.job),
+            joinedload(Interview.application).joinedload(Application.candidate).joinedload(User.profile),
+            selectinload(Interview.feedback).joinedload(InterviewFeedback.author),
+        )
+        .where(Interview.id == interview_id)
+    ).unique().first()
+    if iv is None or iv.application is None or iv.application.job is None or iv.application.job.recruiter_id != recruiter.id:
         raise NotFound("Interview not found")
-    app = get_owned_application(db, recruiter, iv.application_id)  # 404 when not owner
-    iv.application = app
     return iv
 
 

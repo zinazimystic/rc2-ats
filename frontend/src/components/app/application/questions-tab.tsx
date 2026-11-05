@@ -105,7 +105,7 @@ export function QuestionsTab({ appId }: { appId: string }) {
                   </div>
                   <div className="flex flex-wrap gap-1"><Badge variant="outline">{x.category}</Badge>{x.related_skill && <Badge variant="secondary">{x.related_skill}</Badge>}{x.is_edited && <Badge variant="muted">edited</Badge>}</div>
                   {x.answer_guidelines.length > 0 && <ul className="list-disc pl-5 text-sm text-muted-foreground">{x.answer_guidelines.map((g, i) => <li key={i}>{g}</li>)}</ul>}
-                  {x.source_quote && <p className="text-xs text-muted-foreground italic">Based on resume: “{x.source_quote}” {x.source_verified === false && <Badge variant="warning">quote unverified</Badge>}</p>}
+                  {x.source_quote && <p className="text-[13px] text-muted-foreground italic">Based on resume: “{x.source_quote}” {x.source_verified === false && <Badge variant="warning">quote unverified</Badge>}</p>}
                 </CardContent>
               </Card>
             ))}

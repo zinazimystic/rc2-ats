@@ -6,11 +6,11 @@ import { Button } from "./button";
 
 export type NoticeTone = "info" | "success" | "warning" | "error";
 
-const TONE: Record<NoticeTone, { bar: string; bg: string; chip: string; icon: React.ReactNode }> = {
-  info: { bar: "bg-primary", bg: "bg-primary/6", chip: "bg-primary/15 text-primary", icon: <Info /> },
-  success: { bar: "bg-success", bg: "bg-success/8", chip: "bg-success/15 text-success", icon: <CheckCircle2 /> },
-  warning: { bar: "bg-warning", bg: "bg-warning/10", chip: "bg-warning/25 text-[color-mix(in_oklab,var(--warning)_60%,var(--foreground))]", icon: <AlertTriangle /> },
-  error: { bar: "bg-destructive", bg: "bg-destructive/6", chip: "bg-destructive/15 text-destructive", icon: <XCircle /> },
+const TONE: Record<NoticeTone, { icon: React.ReactNode; color: string }> = {
+  info: { icon: <Info />, color: "text-primary" },
+  success: { icon: <CheckCircle2 />, color: "text-success" },
+  warning: { icon: <AlertTriangle />, color: "text-warning" },
+  error: { icon: <XCircle />, color: "text-destructive" },
 };
 
 export interface NoticeProps {
@@ -22,31 +22,19 @@ export interface NoticeProps {
   className?: string;
 }
 
-/** Persistent, page-level message: accent bar, icon chip, title + short text, optional action. */
+/** Restrained card for persistent, actionable states only (use toasts for transient feedback). */
 export function Notice({ tone = "info", title, children, action, onDismiss, className }: NoticeProps) {
   const t = TONE[tone];
   return (
-    <div
-      role={tone === "error" ? "alert" : "status"}
-      className={cn("relative flex items-start gap-3 overflow-hidden rounded-2xl border border-border/60 py-3 pr-3 pl-5 text-sm", t.bg, className)}
-    >
-      <span className={cn("absolute inset-y-0 left-0 w-1.5", t.bar)} aria-hidden />
-      <span className={cn("mt-0.5 grid size-6 shrink-0 place-items-center rounded-full [&_svg]:size-3.5", t.chip)} aria-hidden>
-        {action?.loading ? <Loader2 className="animate-spin" /> : t.icon}
-      </span>
-      <div className="min-w-0 flex-1">
-        {title && <p className="leading-snug font-semibold">{title}</p>}
-        {children && <div className={cn("leading-snug text-foreground/80", title && "mt-0.5 text-[13px]")}>{children}</div>}
+    <div role={tone === "error" ? "alert" : "status"} className={cn("flex items-start gap-3 rounded-2xl border border-border bg-card p-4 text-sm shadow-soft", className)}>
+      <span className={cn("mt-0.5 shrink-0 [&_svg]:size-5", t.color)} aria-hidden>{action?.loading ? <Loader2 className="animate-spin" /> : t.icon}</span>
+      <div className="min-w-0 flex-1 space-y-0.5">
+        {title && <p className="text-[15px] leading-snug font-semibold">{title}</p>}
+        {children && <div className="text-sm leading-relaxed text-muted-foreground">{children}</div>}
       </div>
-      {action && (
-        <Button size="sm" variant="outline" className="shrink-0 self-center" loading={action.loading} disabled={action.disabled} onClick={action.onClick}>
-          {action.label}
-        </Button>
-      )}
+      {action && <Button size="sm" variant="outline" className="shrink-0 self-center" loading={action.loading} disabled={action.disabled} onClick={action.onClick}>{action.label}</Button>}
       {onDismiss && (
-        <button type="button" onClick={onDismiss} aria-label="Dismiss" className="shrink-0 self-start rounded-full p-1 text-muted-foreground hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10">
-          <X className="size-4" />
-        </button>
+        <button type="button" onClick={onDismiss} aria-label="Dismiss" className="shrink-0 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"><X className="size-4" /></button>
       )}
     </div>
   );

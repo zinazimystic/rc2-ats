@@ -4,10 +4,10 @@ from __future__ import annotations
 import uuid
 from typing import Iterable
 
-from sqlalchemy import select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session, joinedload, load_only, selectinload, undefer
 
-from app.models import Application, Assessment, AuditEvent, Interview, Resume, User
+from app.models import Application, Assessment, AuditEvent, Interview, RecruiterNote, Resume, User
 from app.schemas.application import (
     ApplicationDetailOut,
     ApplicationRowOut,
@@ -30,12 +30,15 @@ from app.services.resumes import to_resume_detail
 OPEN_STATES = ("submitted", "parsed", "ai_assessed", "recruiter_review", "shortlisted", "interview")
 
 
-def list_load_options():
-    return (
-        selectinload(Application.candidate).selectinload(User.profile),
-        selectinload(Application.assessment),
-        selectinload(Application.job),
-    )
+def list_load_options(*, skills: bool = False, full_resume: bool = False):
+    """Applicant rows in ONE query (candidate, profile and assessment are joined); resume skills add one more, only on request.
+    The job is not loaded: callers already hold it."""
+    opts = [joinedload(Application.candidate).joinedload(User.profile), joinedload(Application.assessment)]
+    if full_resume:  # compare view needs the parsed resume too
+        opts.append(selectinload(Application.resume).selectinload(Resume.skills))
+    elif skills:
+        opts.append(selectinload(Application.resume).options(load_only(Resume.id), selectinload(Resume.skills)))
+    return tuple(opts)
 
 
 def to_assessment_out(assessment: Assessment, job_version: int | None) -> AssessmentOut:
@@ -127,11 +130,12 @@ def _contact_checks(a: Application, resume: Resume | None):
     return contact_verify.contact_checks(a.candidate, phone, bool(prof.whatsapp_enabled) if prof else None)
 
 
-def to_detail(db: Session, a: Application) -> ApplicationDetailOut:
+def to_detail(db: Session, a: Application, *, notes_count: int | None = None) -> ApplicationDetailOut:
+    """`a` should come from `load_detail` (everything joined). Falls back to lazy loads when it does not."""
     resume = None
     r_obj = None
     if a.resume_id:
-        r_obj = db.get(Resume, a.resume_id)
+        r_obj = a.resume  # joined by load_detail; one lazy load otherwise
         if r_obj is not None:
             resume = to_resume_detail(r_obj)
     ivs = iv_service.load_interviews(db, Interview.application_id == a.id)
@@ -148,12 +152,30 @@ def to_detail(db: Session, a: Application) -> ApplicationDetailOut:
         is_duplicate=a.is_duplicate,
         assessment=to_assessment_out(asm, a.job.version) if asm else None,
         allowed_transitions=workflow.allowed_transitions(a, "recruiter"),
-        notes_count=len(a.notes),
+        notes_count=notes_count if notes_count is not None else len(a.notes),
         interviews=[iv_service.to_interview_out(i, a) for i in ivs],
         contact_checks=_contact_checks(a, r_obj),
         applied_at=a.created_at,
         updated_at=a.updated_at,
     )
+
+
+def load_detail(db: Session, application_id: uuid.UUID) -> tuple[Application, int] | None:
+    """The recruiter detail view's rows in one query: application + job + candidate + profile + assessment + full resume
+    (text included) + note count; resume skills are one more. Always fresh (bypasses stale session state)."""
+    notes = select(func.count(RecruiterNote.id)).where(RecruiterNote.application_id == Application.id).correlate(Application).scalar_subquery()
+    row = db.execute(
+        select(Application, notes)
+        .options(
+            joinedload(Application.job),
+            joinedload(Application.candidate).joinedload(User.profile),
+            joinedload(Application.assessment),
+            joinedload(Application.resume).options(undefer(Resume.text), selectinload(Resume.skills)),
+        )
+        .where(Application.id == application_id)
+        .execution_options(populate_existing=True)
+    ).unique().first()
+    return (row[0], int(row[1] or 0)) if row else None
 
 
 def missing_information(a: Application, resume: Resume | None) -> list[str]:

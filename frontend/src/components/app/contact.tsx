@@ -36,7 +36,7 @@ function whatsappBadge(p: PhoneCheck) {
     return (
       <span className="inline-flex flex-wrap items-center gap-2">
         <Badge variant="success"><MessageCircle /> WhatsApp: declared by candidate</Badge>
-        {w.link && <a className="text-xs font-medium text-primary hover:underline" href={w.link} target="_blank" rel="noreferrer">Chat on WhatsApp</a>}
+        {w.link && <a className="text-[13px] font-medium text-primary hover:underline" href={w.link} target="_blank" rel="noreferrer">Chat on WhatsApp</a>}
       </span>
     );
   return <Badge variant="muted"><MessageCircle /> WhatsApp: {w.status === "not_declared" ? "not declared" : "unknown"}</Badge>;
@@ -63,7 +63,7 @@ export function ContactBadges({ checks }: { checks: ContactChecks | null | undef
       ) : (
         <Badge variant="muted"><Phone /> No phone provided</Badge>
       )}
-      {phone?.issues.map((i) => <span key={i} className="text-xs text-muted-foreground">{i}</span>)}
+      {phone?.issues.map((i) => <span key={i} className="text-[13px] text-muted-foreground">{i}</span>)}
     </div>
   );
 }
@@ -119,9 +119,9 @@ function VerifyEmailDialog({ open, onOpenChange, email }: { open: boolean; onOpe
           <DialogDescription>We’ll send a 6-digit code to {email}.</DialogDescription>
         </DialogHeader>
         {sent && delivery === "simulated" ? (
-          <Notice tone="info" title="Demo mode">No real email is sent. Find your code in your <Link href="/candidate/notifications" className="font-medium underline" onClick={() => onOpenChange(false)}>Notifications</Link>.</Notice>
+          <p className="text-sm text-muted-foreground">No real email is sent. Find your code in your <Link href="/candidate/notifications" className="font-medium underline" onClick={() => onOpenChange(false)}>Notifications</Link>.</p>
         ) : (
-          <p className="text-xs text-muted-foreground">The code is valid for 15 minutes. You can request a new one after 1 minute.</p>
+          <p className="text-[13px] text-muted-foreground">The code is valid for 15 minutes. You can request a new one after 1 minute.</p>
         )}
         {!sent ? (
           <DialogFooter>
@@ -131,7 +131,7 @@ function VerifyEmailDialog({ open, onOpenChange, email }: { open: boolean; onOpe
         ) : (
           <>
             <OtpInput value={code} onChange={(v) => { setCode(v); setBad(false); }} invalid={bad} disabled={verify.isPending} />
-            {bad && <p role="alert" className="text-center text-xs text-destructive">That code didn’t work. Check it and try again, or request a new one.</p>}
+            {bad && <p role="alert" className="text-center text-[13px] text-destructive">That code didn’t work. Check it and try again, or request a new one.</p>}
             <DialogFooter className="sm:justify-between">
               <Button variant="ghost" disabled={cooldown > 0} loading={send.isPending} onClick={() => send.mutate()}>{cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}</Button>
               <Button disabled={code.length < 6} loading={verify.isPending} onClick={() => verify.mutate(code)}>Verify</Button>
@@ -181,8 +181,8 @@ export function ContactCard({ profile }: { profile: ProfileOut }) {
             <span className="grid size-9 place-items-center rounded-full bg-muted"><Phone className="size-4" /></span>
             <div className="min-w-0 flex-1 space-y-2">
               <p className="text-sm font-medium">{phone?.e164 ?? phone?.raw ?? profile.phone ?? "No phone number yet"}</p>
-              {phone ? <div className="flex flex-wrap gap-1.5">{phoneBadges(phone)}</div> : !profile.phone && <p className="text-xs text-muted-foreground">Add a phone number in your profile below.</p>}
-              {phone?.issues.map((i) => <p key={i} className="text-xs text-muted-foreground">{i}</p>)}
+              {phone ? <div className="flex flex-wrap gap-1.5">{phoneBadges(phone)}</div> : !profile.phone && <p className="text-[13px] text-muted-foreground">Add a phone number in your profile below.</p>}
+              {phone?.issues.map((i) => <p key={i} className="text-[13px] text-muted-foreground">{i}</p>)}
             </div>
           </div>
           {profile.phone && (
@@ -190,7 +190,7 @@ export function ContactCard({ profile }: { profile: ProfileOut }) {
               <Switch id="wa-switch" checked={!!profile.whatsapp_enabled} disabled={wa.isPending || (phone ? !phone.valid && !phone.possible : false)} onCheckedChange={(v) => wa.mutate(v)} aria-labelledby="wa-label" />
               <div className="min-w-0 flex-1">
                 <label id="wa-label" htmlFor="wa-switch" className="text-sm font-medium">I use WhatsApp on this number</label>
-                <p className="text-xs text-muted-foreground">Declared by you, not verified.</p>
+                <p className="text-[13px] text-muted-foreground">Declared by you, not verified.</p>
               </div>
               {profile.whatsapp_enabled && phone?.whatsapp.link && (
                 <Button size="sm" variant="outline" asChild>

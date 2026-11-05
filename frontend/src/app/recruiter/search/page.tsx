@@ -36,13 +36,13 @@ export default function TalentSearch() {
           {r.results.length === 0 ? <EmptyState title="No matching candidates" description="Try broader wording or fewer constraints." /> : r.results.map((x) => (
             <Card key={x.candidate.id}><CardContent className="space-y-3 pt-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div><p className="font-semibold">{x.candidate.full_name} {x.in_talent_pool && <Badge variant="success">Talent pool</Badge>}</p><p className="text-xs text-muted-foreground">{[x.candidate.headline, x.candidate.location, x.candidate.email].filter(Boolean).join(" · ")}</p></div>
+                <div><p className="font-semibold">{x.candidate.full_name} {x.in_talent_pool && <Badge variant="success">Talent pool</Badge>}</p><p className="text-[13px] text-muted-foreground">{[x.candidate.headline, x.candidate.location, x.candidate.email].filter(Boolean).join(" · ")}</p></div>
                 <div className="w-36"><ScoreBar value={x.score} /></div>
               </div>
               <SkillChips skills={x.matched_skills} tone="success" max={10} />
-              {x.evidence.slice(0, 2).map((e, i) => <p key={i} className="flex items-start gap-2 rounded-md border bg-muted/40 p-2 text-xs italic"><Quote className="mt-0.5 size-3 shrink-0" />“{e.quote}”</p>)}
+              {x.evidence.slice(0, 2).map((e, i) => <p key={i} className="flex items-start gap-2 rounded-md border bg-muted/40 p-2 text-[13px] italic"><Quote className="mt-0.5 size-3 shrink-0" />“{e.quote}”</p>)}
               <div className="flex flex-wrap items-center gap-2">
-                {x.applications.map((a) => <Link key={a.application_id} href={`/recruiter/applications/${a.application_id}`} className="inline-flex items-center gap-1 text-xs hover:underline">{a.job_title} <StatusBadge status={a.status} /></Link>)}
+                {x.applications.map((a) => <Link key={a.application_id} href={`/recruiter/applications/${a.application_id}`} className="inline-flex items-center gap-1 text-[13px] hover:underline">{a.job_title} <StatusBadge status={a.status} /></Link>)}
                 <Button variant="link" size="sm" asChild className="ml-auto"><a href={`/api/resumes/${x.resume_id}/file`} target="_blank" rel="noreferrer"><ExternalLink /> Resume</a></Button>
               </div>
             </CardContent></Card>

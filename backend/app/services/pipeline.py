@@ -14,7 +14,7 @@ from sqlalchemy.orm import selectinload
 from app.core.config import settings
 from app.db.session import SessionLocal
 from app.db.types import utcnow
-from app.models import Application, Assessment, CandidateSkill, Job, Resume, ResumeChunk, User
+from app.models import Application, Assessment, CandidateSkill, Job, Resume, ResumeChunk, User, job_vector_options
 from app.schemas.common import Flag
 from app.services import tasks, workflow
 from app.services.ai import embeddings
@@ -269,7 +269,7 @@ def _assess(db, application_id: UUID) -> None:  # noqa: ANN001
     workflow.system_transition(db, app, "parsed", note="Resume parsed")
     db.commit()
 
-    job = db.scalars(select(Job).where(Job.id == app.job_id).options(selectinload(Job.requirements))).first()
+    job = db.scalars(select(Job).where(Job.id == app.job_id).options(*job_vector_options())).first()
     if job is None:
         raise RuntimeError("job not found")
     prof_interests: tuple[str, ...] = ()

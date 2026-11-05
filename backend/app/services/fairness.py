@@ -6,7 +6,7 @@ import re
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload, undefer
 
-from app.models import Application, Job, Resume, User
+from app.models import Application, Job, Resume, User, job_vector_options
 from app.schemas.application import FairnessOut, FairnessVariant
 from app.services import pipeline
 from app.services.core_names import swap_name, swap_pronouns
@@ -35,7 +35,7 @@ def _score(db: Session, job: Job, text: str, names: list[str]) -> float:
 
 def run_fairness_check(db: Session, application: Application) -> FairnessOut:
     resume = db.scalars(select(Resume).where(Resume.id == application.resume_id).options(undefer(Resume.text))).first()
-    job = db.scalars(select(Job).where(Job.id == application.job_id).options(selectinload(Job.requirements))).first()
+    job = db.scalars(select(Job).where(Job.id == application.job_id).options(*job_vector_options())).first()
     user = db.get(User, application.candidate_id)
     text = (resume.text if resume else None) or ""
     if not text.strip() or job is None:

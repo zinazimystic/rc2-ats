@@ -41,7 +41,7 @@ export default function InterviewsPage() {
   const detail = q.data?.find((x) => x.id === detailId) ?? null;
 
   const card = (iv: InterviewOut) => (
-    <div key={iv.id} className={cn("rounded-xl border p-2.5 text-xs", iv.status === "cancelled" ? "opacity-50" : "bg-primary/8", iv.has_conflict && "border-warning")}>
+    <div key={iv.id} className={cn("rounded-xl border p-2.5 text-[13px]", iv.status === "cancelled" ? "opacity-50" : "bg-primary/8", iv.has_conflict && "border-warning")}>
       <p className="font-medium">{fmtTime(iv.start_at)} · {iv.candidate_name}</p>
       <p className="text-muted-foreground">{iv.job_title} · {titleCase(iv.interview_type)}</p>
       <p className="text-muted-foreground">with {iv.interviewer_name}</p>
@@ -76,7 +76,7 @@ export default function InterviewsPage() {
             const items = sorted.filter((iv) => new Date(iv.start_at).toDateString() === d.toDateString());
             return (
               <Card key={d.toISOString()} className={cn("min-h-40 space-y-2 p-2", d.toDateString() === today && "border-primary")}>
-                <p className={cn("text-xs font-semibold", d.toDateString() === today ? "text-primary" : "text-muted-foreground")}>{d.toLocaleDateString(undefined, { weekday: "short", day: "numeric" })}</p>
+                <p className={cn("text-[13px] font-semibold", d.toDateString() === today ? "text-primary" : "text-muted-foreground")}>{d.toLocaleDateString(undefined, { weekday: "short", day: "numeric" })}</p>
                 {items.map(card)}
               </Card>
             );

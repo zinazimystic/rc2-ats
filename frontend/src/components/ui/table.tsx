@@ -19,7 +19,7 @@ export function TR({ className, ...p }: React.ComponentProps<"tr">) {
 }
 export function TH({ className, ...p }: React.ComponentProps<"th">) {
   return (
-    <th className={cn("h-11 px-4 text-left align-middle text-[11px] font-semibold tracking-wider whitespace-nowrap uppercase text-muted-foreground", className)} {...p} />
+    <th className={cn("h-11 px-4 text-left align-middle text-[13px] font-semibold tracking-wider whitespace-nowrap uppercase text-muted-foreground", className)} {...p} />
   );
 }
 export function TD({ className, ...p }: React.ComponentProps<"td">) {

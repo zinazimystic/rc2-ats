@@ -6,12 +6,12 @@ import re
 from dataclasses import dataclass
 from uuid import UUID
 
-from sqlalchemy import and_, or_, select, text as sql_text
-from sqlalchemy.orm import Session, joinedload, selectinload, undefer
+from sqlalchemy import and_, inspect as sa_inspect, or_, select, text as sql_text
+from sqlalchemy.orm import Session, joinedload, load_only, selectinload, undefer
 
 from app.core.errors import NotFound
 from app.db.types import utcnow
-from app.models import Application, CandidateProfile, Job, Notification, Resume, ResumeChunk, User
+from app.models import Application, CandidateProfile, Job, Notification, Resume, ResumeChunk, User, job_vector_options
 from app.schemas.common import CandidateBrief, Evidence, JobBrief
 from app.schemas.search import (
     RecommendationOut, SearchApplicationRef, TalentPoolItem, TalentSearchIn, TalentSearchOut, TalentSearchResult,
@@ -37,42 +37,48 @@ def _pool_ok(p: CandidateProfile | None) -> bool:
     return bool(p and p.talent_pool_opt_in and (p.retention_until is None or p.retention_until > utcnow()))
 
 
-def accessible_candidates(db: Session, recruiter: User, *, job_id: UUID | None = None) -> dict[UUID, bool]:
-    """candidate_id -> in_talent_pool. Applicants to the recruiter's jobs plus opted-in candidates within retention.
-    Merged duplicates and inactive accounts are excluded."""
-    result: dict[UUID, bool] = {}
-    q = select(Application.candidate_id).join(Job, Job.id == Application.job_id).where(Job.recruiter_id == recruiter.id, Application.status != "withdrawn")
+def accessible_users(db: Session, recruiter: User, *, job_id: UUID | None = None) -> dict[UUID, tuple[User, bool]]:
+    """candidate_id -> (user with profile, in_talent_pool) in ONE query: applicants to the recruiter's jobs plus (when no job
+    is given) opted-in candidates within retention. Merged duplicates and inactive accounts are excluded."""
+    applicants = select(Application.candidate_id).join(Job, Job.id == Application.job_id).where(
+        Job.recruiter_id == recruiter.id, Application.status != "withdrawn"
+    )
     if job_id is not None:
-        q = q.where(Application.job_id == job_id)
-    applicants = set(db.scalars(q))
-    pooled = set()
+        applicants = applicants.where(Application.job_id == job_id)
+    allowed = User.id.in_(applicants)
     if job_id is None:
-        pooled = set(
-            db.scalars(
-                select(CandidateProfile.user_id).where(
-                    CandidateProfile.talent_pool_opt_in.is_(True),
-                    or_(CandidateProfile.retention_until.is_(None), CandidateProfile.retention_until > utcnow()),
-                )
-            )
+        pooled = select(CandidateProfile.user_id).where(
+            CandidateProfile.talent_pool_opt_in.is_(True),
+            or_(CandidateProfile.retention_until.is_(None), CandidateProfile.retention_until > utcnow()),
         )
-    ids = applicants | pooled
-    if not ids:
-        return {}
-    users = db.scalars(select(User).where(User.id.in_(ids), User.role == "candidate", User.is_active.is_(True)).options(selectinload(User.profile))).all()
-    for u in users:
-        if u.profile is not None and u.profile.merged_into_id is not None:
-            continue
-        result[u.id] = _pool_ok(u.profile)
-    return result
+        allowed = or_(allowed, User.id.in_(pooled))
+    users = db.scalars(
+        select(User).where(allowed, User.role == "candidate", User.is_active.is_(True)).options(joinedload(User.profile))
+    ).unique().all()
+    return {u.id: (u, _pool_ok(u.profile)) for u in users if not (u.profile is not None and u.profile.merged_into_id is not None)}
 
 
-def _current_resumes(db: Session, candidate_ids: list[UUID]) -> dict[UUID, Resume]:
+def accessible_candidates(db: Session, recruiter: User, *, job_id: UUID | None = None) -> dict[UUID, bool]:
+    """candidate_id -> in_talent_pool (see `accessible_users`)."""
+    return {cid: pool for cid, (_, pool) in accessible_users(db, recruiter, job_id=job_id).items()}
+
+
+def _current_resumes(db: Session, candidate_ids: list[UUID], *, text: bool = False, chunks: bool = False, light: bool = False) -> dict[UUID, Resume]:
+    """Each candidate's current parsed resume (skills included). Round trips: 1 + skills (+ chunks). `light` loads only the ids
+    (enough for search, where evidence comes from chunks); `text` adds the resume text (keyword fallback only)."""
     if not candidate_ids:
         return {}
+    opts = [selectinload(Resume.skills)]
+    if light:
+        opts.append(load_only(Resume.id, Resume.candidate_id, Resume.is_current, Resume.created_at))
+    if text:
+        opts.append(undefer(Resume.text))
+    if chunks:
+        opts.append(selectinload(Resume.chunks))
     rows = db.scalars(
         select(Resume).where(Resume.candidate_id.in_(candidate_ids), Resume.parse_status == "parsed", Resume.deleted_at.is_(None))
         .order_by(Resume.is_current.desc(), Resume.created_at.desc())
-        .options(selectinload(Resume.skills), undefer(Resume.text))
+        .options(*opts)
     ).all()
     out: dict[UUID, Resume] = {}
     for r in rows:
@@ -133,15 +139,17 @@ def talent_search(db: Session, recruiter: User, req: TalentSearchIn) -> TalentSe
         job = db.get(Job, req.job_id)
         if job is None or job.recruiter_id != recruiter.id:
             raise NotFound("Job not found")
-    access = accessible_candidates(db, recruiter, job_id=req.job_id)
-    users = {u.id: u for u in db.scalars(select(User).where(User.id.in_(list(access))).options(selectinload(User.profile)))} if access else {}
-    resumes = _current_resumes(db, list(access))
+    access_u = accessible_users(db, recruiter, job_id=req.job_id)
+    access = {cid: pool for cid, (_, pool) in access_u.items()}
+    users = {cid: u for cid, (u, _) in access_u.items()}
+    semantic_possible = embeddings.embeddings_available()
+    resumes = _current_resumes(db, list(access), text=not semantic_possible, light=True)
     out = TalentSearchOut(query=query, detected_skills=detected, mode="keyword")
     if not resumes:
         return out
 
     qv: list[float] | None = None
-    if embeddings.embeddings_available():
+    if semantic_possible:
         try:
             qv = embeddings.embed_text(query)
         except embeddings.EmbeddingUnavailable as exc:
@@ -152,6 +160,8 @@ def talent_search(db: Session, recruiter: User, req: TalentSearchIn) -> TalentSe
         hits = _chunk_hits(db, [r.id for r in resumes.values()], qv)
     else:
         out.warning = "Semantic search is unavailable right now (embeddings service not reachable); showing keyword matches."
+        if semantic_possible:  # embeddings failed mid-request: the keyword path needs the resume text (one batched load)
+            db.scalars(select(Resume).where(Resume.id.in_([r.id for r in resumes.values()])).options(undefer(Resume.text))).all()
 
     app_rows = db.execute(
         select(Application, Job).join(Job, Job.id == Application.job_id)
@@ -258,7 +268,7 @@ def recommend_from(resume: Resume, jobs: list[Job], applied: set, interests: tup
 
 
 def open_jobs_query(exclude_applied_for: UUID | None = None):
-    stmt = select(Job).where(Job.status == "open").options(joinedload(Job.requirements)).order_by(Job.created_at.desc())
+    stmt = select(Job).where(Job.status == "open").options(*job_vector_options(join=True)).order_by(Job.created_at.desc())
     if exclude_applied_for is not None:
         stmt = stmt.where(Job.id.not_in(select(Application.job_id).where(Application.candidate_id == exclude_applied_for)))
     return stmt
@@ -276,30 +286,30 @@ def recommend_jobs(db: Session, candidate: User, limit: int = 10) -> list[Recomm
 
 # --------------------------------------------------------------------------- talent pool
 def talent_pool(db: Session, job: Job, recruiter: User) -> list[TalentPoolItem]:
-    """Candidates the recruiter may see (opted-in, or applied to another of their jobs) who have not applied to this job."""
-    if "requirements" not in job.__dict__:
-        job = db.scalars(select(Job).where(Job.id == job.id).options(selectinload(Job.requirements))).one()
-    access = accessible_candidates(db, recruiter)
+    """Candidates the recruiter may see (opted-in, or applied to another of their jobs) who have not applied to this job.
+    Round trips (constant, whatever the pool size): job+requirements+vectors, accessible users, already-applied, resumes,
+    skills, chunks, previous applications, invitations."""
+    if "embedding" in sa_inspect(job).unloaded:  # callers that need the scoring vectors load them up front (one query)
+        job = db.scalars(select(Job).where(Job.id == job.id).options(*job_vector_options(join=True))).unique().one()
+    access_u = accessible_users(db, recruiter)
     already = set(db.scalars(select(Application.candidate_id).where(Application.job_id == job.id, Application.status != "withdrawn")))
-    ids = [c for c in access if c not in already]
+    ids = [c for c in access_u if c not in already]
     if not ids:
         return []
-    users = {u.id: u for u in db.scalars(select(User).where(User.id.in_(ids)).options(selectinload(User.profile)))}
-    resumes = _current_resumes(db, ids)
+    users = {cid: access_u[cid][0] for cid in ids}
+    resumes = _current_resumes(db, ids, chunks=True)
     prev: dict[UUID, str] = {}
-    for a, j in db.execute(
-        select(Application, Job).join(Job, Job.id == Application.job_id)
+    for cand_id, title in db.execute(
+        select(Application.candidate_id, Job.title).join(Job, Job.id == Application.job_id)
         .where(Job.recruiter_id == recruiter.id, Application.candidate_id.in_(ids), Job.id != job.id).order_by(Application.created_at)
     ).all():
-        prev[a.candidate_id] = j.title
+        prev[cand_id] = title
     invited = set(db.scalars(select(Notification.user_id).where(Notification.type == "job_invite", Notification.link == f"/candidate/jobs/{job.id}")))
-    # rows were loaded without chunks; load chunks/skills for the few resumes we score
     items: list[TalentPoolItem] = []
     for cid, resume in resumes.items():
         user = users.get(cid)
         if user is None:
             continue
-        resume = db.scalars(select(Resume).where(Resume.id == resume.id).options(selectinload(Resume.skills), selectinload(Resume.chunks))).one()
         interests = tuple((user.profile.interests if user.profile else None) or ())
         _, results, sc = _score_against(job, resume, interests)
         total = min(100.0, sc.total + _interest_boost(interests, job))

@@ -55,7 +55,7 @@ def detect_for_resume(db: Session, resume: Resume) -> list[DuplicateFlag]:
     others = db.scalars(
         select(Resume)
         .where(Resume.candidate_id != resume.candidate_id, Resume.is_current.is_(True), Resume.parse_status == "parsed")
-        .options(undefer(Resume.text))
+        .options(undefer(Resume.text), undefer(Resume.doc_embedding))
         .limit(1000)
     ).all()
     created: list[DuplicateFlag] = []

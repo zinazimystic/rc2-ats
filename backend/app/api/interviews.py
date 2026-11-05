@@ -4,11 +4,12 @@ import uuid
 from datetime import datetime
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Query
-from sqlalchemy import select
+from fastapi import APIRouter, Query, Response
+from sqlalchemy import func, select
 
 from app.core.deps import DB, Recruiter
 from app.models import Application, Interview, Job
+from app.core.pagination import Limit, Offset, set_total
 from app.schemas.interview import FeedbackIn, InterviewIn, InterviewOut, InterviewPatch
 from app.services import interviews as svc
 from app.services.access import get_owned_application, get_owned_interview
@@ -18,8 +19,7 @@ app_router = APIRouter(prefix="/applications", tags=["interviews"])
 
 
 def _one(db, iv_id: uuid.UUID) -> InterviewOut:
-    db.expire_all()
-    iv = svc.load_interviews(db, Interview.id == iv_id)[0]
+    iv = svc.load_interviews(db, Interview.id == iv_id, fresh=True)[0]
     return svc.to_interview_out(iv)
 
 
@@ -39,11 +39,14 @@ def schedule(application_id: uuid.UUID, body: InterviewIn, db: DB, user: Recruit
 
 @router.get("", response_model=list[InterviewOut])
 def list_interviews(
+    response: Response,
     db: DB,
     user: Recruiter,
     from_: Annotated[datetime | None, Query(alias="from")] = None,
     to: datetime | None = None,
     status: Literal["scheduled", "completed", "cancelled"] | None = None,
+    limit: Limit = 200,
+    offset: Offset = 0,
 ):
     clause = Interview.application_id.in_(
         select(Application.id).join(Job, Job.id == Application.job_id).where(Job.recruiter_id == user.id)
@@ -54,7 +57,9 @@ def list_interviews(
         clause = clause & (Interview.start_at <= svc.as_utc(to))
     if status:
         clause = clause & (Interview.status == status)
-    return [svc.to_interview_out(i) for i in svc.load_interviews(db, clause)]
+    rows = svc.load_interviews(db, clause, limit=limit, offset=offset)
+    set_total(response, len(rows), limit, offset, lambda: db.scalar(select(func.count()).select_from(Interview).where(clause)) or 0)
+    return [svc.to_interview_out(i) for i in rows]
 
 
 @router.patch("/{interview_id}", response_model=InterviewOut)

@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter
-from sqlalchemy import select, update
+from fastapi import APIRouter, Response
+from sqlalchemy import func, select, update
 
 from app.core.deps import DB, CurrentUser, Recruiter
 from app.core.errors import NotFound
+from app.core.pagination import Limit, Offset, set_total
 from app.models import Notification
 from app.schemas.analytics import NotificationOut
 from app.schemas.common import Msg
@@ -15,19 +16,21 @@ router = APIRouter(prefix="/notifications", tags=["notifications"])
 
 
 @router.get("", response_model=list[NotificationOut])
-def list_notifications(db: DB, user: CurrentUser, unread: bool | None = None):
-    stmt = select(Notification).where(Notification.user_id == user.id, Notification.channel == "in_app")
+def list_notifications(response: Response, db: DB, user: CurrentUser, unread: bool | None = None, limit: Limit = 100, offset: Offset = 0):
+    where = [Notification.user_id == user.id, Notification.channel == "in_app"]
     if unread:
-        stmt = stmt.where(Notification.read.is_(False))
-    return db.scalars(stmt.order_by(Notification.created_at.desc()).limit(100)).all()
+        where.append(Notification.read.is_(False))
+    rows = db.scalars(select(Notification).where(*where).order_by(Notification.created_at.desc()).limit(limit).offset(offset)).all()
+    set_total(response, len(rows), limit, offset, lambda: db.scalar(select(func.count()).select_from(Notification).where(*where)) or 0)
+    return rows
 
 
 @router.get("/outbox", response_model=list[NotificationOut])
-def outbox(db: DB, user: Recruiter):
-    return db.scalars(
-        select(Notification).where(Notification.sender_id == user.id, Notification.channel == "email_sim")
-        .order_by(Notification.created_at.desc()).limit(100)
-    ).all()
+def outbox(response: Response, db: DB, user: Recruiter, limit: Limit = 100, offset: Offset = 0):
+    where = [Notification.sender_id == user.id, Notification.channel == "email_sim"]
+    rows = db.scalars(select(Notification).where(*where).order_by(Notification.created_at.desc()).limit(limit).offset(offset)).all()
+    set_total(response, len(rows), limit, offset, lambda: db.scalar(select(func.count()).select_from(Notification).where(*where)) or 0)
+    return rows
 
 
 @router.post("/read-all", response_model=Msg)

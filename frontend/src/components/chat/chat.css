@@ -1,0 +1,28 @@
+@keyframes rc-panel-in { from { opacity: 0; transform: translateY(14px) scale(0.97); } to { opacity: 1; transform: none; } }
+@keyframes rc-panel-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(14px) scale(0.97); } }
+@keyframes rc-dot { 0%, 60%, 100% { transform: translateY(0); opacity: 0.45; } 30% { transform: translateY(-4px); opacity: 1; } }
+@keyframes rc-caret { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+@keyframes rc-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 55%, transparent); } 100% { box-shadow: 0 0 0 18px transparent; } }
+@keyframes rc-msg-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+.rc-panel[data-state="open"] { animation: rc-panel-in 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both; transform-origin: bottom right; }
+.rc-panel[data-state="closed"] { animation: rc-panel-out 0.16s ease-in both; transform-origin: bottom right; }
+.rc-dot { animation: rc-dot 1.1s ease-in-out infinite; }
+.rc-pulse { animation: rc-pulse 1.6s ease-out 2; }
+.rc-msg { animation: rc-msg-in 0.2s ease-out both; }
+
+/* blinking caret after the last streamed block */
+.rc-streaming > :last-child:not(pre):not(table):not(ul):not(ol)::after,
+.rc-streaming > :is(ul, ol):last-child > li:last-child::after {
+  content: ""; display: inline-block; width: 0.45em; height: 1em; margin-left: 2px; vertical-align: -0.12em;
+  border-radius: 1px; background: currentColor; animation: rc-caret 1s steps(1) infinite;
+}
+
+.rc-md { overflow-wrap: anywhere; word-break: break-word; }
+.rc-md > :first-child { margin-top: 0; }
+.rc-md > :last-child { margin-bottom: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rc-panel, .rc-dot, .rc-pulse, .rc-msg { animation: none !important; }
+  .rc-streaming > :last-child::after { animation: none !important; }
+}

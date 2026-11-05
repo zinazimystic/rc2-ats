@@ -234,7 +234,7 @@ export function JobForm({ job }: { job?: JobOut }) {
                 </Field>
               ))}
             </div>
-            {errors.weights && <p role="alert" className="mt-1 text-xs text-destructive">{errors.weights}</p>}
+            {errors.weights && <p role="alert" className="mt-1 text-[13px] text-destructive">{errors.weights}</p>}
           </div>
         </CardContent>
       </Card>

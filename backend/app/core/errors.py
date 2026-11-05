@@ -71,7 +71,9 @@ def _body(detail: str, code: str, **extra: Any) -> dict[str, Any]:
 def install_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppError)
     async def _app_error(_: Request, exc: AppError):
-        return JSONResponse(status_code=exc.status_code, content=_body(exc.detail, exc.code, **exc.extra))
+        retry = exc.extra.get("retry_after")
+        headers = {"Retry-After": str(retry)} if isinstance(retry, int) else None
+        return JSONResponse(status_code=exc.status_code, content=_body(exc.detail, exc.code, **exc.extra), headers=headers)
 
     @app.exception_handler(RequestValidationError)
     async def _validation(_: Request, exc: RequestValidationError):

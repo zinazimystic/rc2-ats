@@ -12,6 +12,7 @@ from app.api import (
     applications,
     auth,
     candidates,
+    chat,
     duplicates,
     health,
     interviews,
@@ -86,6 +87,7 @@ def create_app() -> FastAPI:
         analytics.router,
         duplicates.router,
         notifications.router,
+        chat.router,
     ):
         app.include_router(r, prefix="/api")
     return app

@@ -33,12 +33,12 @@ export default function MyApplications() {
           {q.data.map((a) => (
             <Card key={a.id}><CardContent className="space-y-4 pt-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div><Link href={`/candidate/jobs/${a.job.id}`} className="text-lg font-semibold hover:text-primary">{a.job.title}</Link><p className="text-sm text-muted-foreground">{[a.job.department, a.job.location].filter(Boolean).join(" · ")}</p>{a.resume_filename && <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><FileText className="size-3" />{a.resume_filename}</p>}</div>
+                <div><Link href={`/candidate/jobs/${a.job.id}`} className="text-lg font-semibold hover:text-primary">{a.job.title}</Link><p className="text-sm text-muted-foreground">{[a.job.department, a.job.location].filter(Boolean).join(" · ")}</p>{a.resume_filename && <p className="mt-1 flex items-center gap-1 text-[13px] text-muted-foreground"><FileText className="size-3" />{a.resume_filename}</p>}</div>
                 <div className="flex items-center gap-2"><StatusBadge status={a.status} label={a.status_label} /><ProcessingBadge state={a.processing_state === "failed" ? "queued" : a.processing_state} /></div>
               </div>
               <ol className="space-y-2 border-l pl-4">
                 {a.timeline.map((t, i) => (
-                  <li key={i} className="relative text-sm"><span className="absolute top-1.5 -left-[1.35rem] size-2.5 rounded-full bg-primary" aria-hidden />{t.label} <span className="text-xs text-muted-foreground">· {fmtDateTime(t.at)}</span></li>
+                  <li key={i} className="relative text-sm"><span className="absolute top-1.5 -left-[1.35rem] size-2.5 rounded-full bg-primary" aria-hidden />{t.label} <span className="text-[13px] text-muted-foreground">· {fmtDateTime(t.at)}</span></li>
                 ))}
               </ol>
               {a.interviews.filter((i) => i.status === "scheduled").map((i) => (

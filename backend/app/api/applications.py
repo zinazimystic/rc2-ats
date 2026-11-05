@@ -3,12 +3,13 @@ from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Response
-from sqlalchemy import desc, select
+from sqlalchemy import desc, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload, selectinload
 
 from app.core.deps import DB, Candidate, Recruiter
 from app.core.errors import Conflict, NotFound, Unprocessable
+from app.core.pagination import Limit, Offset, set_total
 from app.models import Application, Assessment, AuditEvent, Job, RecruiterNote, Resume, User
 from app.schemas.application import (
     ApplicationDetailOut,
@@ -131,17 +132,12 @@ def withdraw(application_id: uuid.UUID, db: DB, user: Candidate):
 
 # ----------------------------------------------------------------------------- recruiter
 def _detail(db, user, application_id: uuid.UUID) -> ApplicationDetailOut:
-    db.expire_all()
-    a = get_owned_application(db, user, application_id)
-    a = db.scalar(
-        select(Application)
-        .where(Application.id == a.id)
-        .options(
-            selectinload(Application.job), selectinload(Application.candidate).selectinload(User.profile),
-            selectinload(Application.assessment), selectinload(Application.notes),
-        )
-    )
-    return app_service.to_detail(db, a)
+    """Fresh detail view: application, job, candidate, profile, assessment, resume and note count in ONE query (+ skills,
+    interviews, feedback). Not-owner and not-found are both 404."""
+    loaded = app_service.load_detail(db, application_id)
+    if loaded is None or loaded[0].job is None or loaded[0].job.recruiter_id != user.id:
+        raise NotFound("Application not found")
+    return app_service.to_detail(db, loaded[0], notes_count=loaded[1])
 
 
 @router.get("/{application_id}", response_model=ApplicationDetailOut)
@@ -191,7 +187,7 @@ def override(application_id: uuid.UUID, body: OverrideIn, db: DB, user: Recruite
 def list_notes(application_id: uuid.UUID, db: DB, user: Recruiter):
     a = get_owned_application(db, user, application_id)
     rows = db.scalars(
-        select(RecruiterNote).where(RecruiterNote.application_id == a.id).options(selectinload(RecruiterNote.author))
+        select(RecruiterNote).where(RecruiterNote.application_id == a.id).options(joinedload(RecruiterNote.author))
         .order_by(RecruiterNote.created_at.desc())
     ).all()
     return [NoteOut(id=n.id, application_id=n.application_id, author_id=n.author_id, author_name=n.author.full_name,
@@ -222,16 +218,20 @@ def delete_note(note_id: uuid.UUID, db: DB, user: Recruiter):
 
 
 @router.get("/{application_id}/history", response_model=list[HistoryEventOut])
-def history(application_id: uuid.UUID, db: DB, user: Recruiter):
+def history(application_id: uuid.UUID, response: Response, db: DB, user: Recruiter, limit: Limit = 200, offset: Offset = 0):
     a = get_owned_application(db, user, application_id)
-    events = db.scalars(select(AuditEvent).where(AuditEvent.application_id == a.id).order_by(AuditEvent.created_at)).all()
-    actor_ids = {e.actor_id for e in events if e.actor_id}
-    names = dict(db.execute(select(User.id, User.full_name).where(User.id.in_(actor_ids))).all()) if actor_ids else {}
+    rows = db.execute(
+        select(AuditEvent, User.full_name).outerjoin(User, User.id == AuditEvent.actor_id)
+        .where(AuditEvent.application_id == a.id).order_by(AuditEvent.created_at)
+        .limit(limit).offset(offset)
+    ).all()
+    set_total(response, len(rows), limit, offset,
+              lambda: db.scalar(select(func.count()).select_from(AuditEvent).where(AuditEvent.application_id == a.id)) or 0)
     return [
         HistoryEventOut(id=e.id, action=e.action, from_value=e.from_value, to_value=e.to_value, actor_id=e.actor_id,
-                        actor_name=names.get(e.actor_id) if e.actor_id else "System", actor_role=e.actor_role, note=e.note,
+                        actor_name=name if e.actor_id else "System", actor_role=e.actor_role, note=e.note,
                         created_at=e.created_at)
-        for e in events
+        for e, name in rows
     ]
 
 

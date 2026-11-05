@@ -60,7 +60,7 @@ export default function RegisterPage() {
               className={cn("rounded-lg border p-3 text-left text-sm transition-colors", role === r ? "border-primary bg-primary/8" : "hover:bg-muted")}
             >
               <span className="block font-medium capitalize">{r}</span>
-              <span className="text-xs text-muted-foreground">{r === "candidate" ? "Apply to jobs" : "Post & review"}</span>
+              <span className="text-[13px] text-muted-foreground">{r === "candidate" ? "Apply to jobs" : "Post & review"}</span>
             </button>
           ))}
         </div>

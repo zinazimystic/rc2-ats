@@ -28,6 +28,11 @@ class RateLimiter:
                 retry = max(1, int(window - (now - q[0])))
                 raise TooManyRequests(message, extra={"retry_after": retry})
 
+    def count(self, key: str, window: float) -> int:
+        """Hits recorded in the last `window` seconds."""
+        with self._lock:
+            return len(self._prune(key, window, time.monotonic()))
+
     def hit(self, key: str, window: float = 60.0) -> None:
         now = time.monotonic()
         with self._lock:

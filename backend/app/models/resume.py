@@ -26,7 +26,7 @@ class Resume(Base, IdMixin, TimestampMixin):
     integrity_flags: Mapped[list] = mapped_column(JSONType, default=list)  # list[Flag dict]
     extraction_method: Mapped[Optional[str]] = mapped_column(String(10))  # llm | rules
     parsed: Mapped[Optional[dict]] = mapped_column(JSONType)  # ParsedResume dict
-    doc_embedding: Mapped[Optional[list]] = mapped_column(Embedding)
+    doc_embedding: Mapped[Optional[list]] = deferred(mapped_column(Embedding))
     is_current: Mapped[bool] = mapped_column(Boolean, default=True)
     deleted_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)  # soft delete: hidden from the candidate, kept for recruiters
     processing_started_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)  # used by tasks.recover_stuck

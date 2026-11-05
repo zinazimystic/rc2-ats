@@ -15,7 +15,7 @@ function RowScore({ jobId, resumeId, enabled }: { jobId: string; resumeId: strin
   const m = useMyMatch(jobId, resumeId, enabled);
   if (!enabled) return null;
   if (m.isPending && !m.data) return <Loader2 className="size-3.5 animate-spin text-muted-foreground" aria-label="Checking fit" />;
-  if (!m.data) return <span className="text-xs text-muted-foreground">—</span>;
+  if (!m.data) return <span className="text-[13px] text-muted-foreground">—</span>;
   return <span className={cn("text-sm font-semibold tabular-nums", bandTone(m.data.band))}>{Math.round(m.data.score)}%</span>;
 }
 
@@ -35,7 +35,7 @@ export function ResumePicker({
     >
       {({ close }) => (
         <div role="radiogroup" aria-label="Choose a resume" className="space-y-1">
-          <p className="px-2 pt-1 pb-0.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">Your resumes</p>
+          <p className="px-2 pt-1 pb-0.5 text-[13px] font-medium tracking-wide text-muted-foreground uppercase">Your resumes</p>
           {resumes.length === 0 && <p className="px-2 py-3 text-sm text-muted-foreground">No resumes yet.</p>}
           {resumes.map((r) => {
             const usable = r.parse_status === "parsed";
@@ -55,7 +55,7 @@ export function ResumePicker({
                 <FileText className="size-4 shrink-0 text-muted-foreground" />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium">{r.filename}</span>
-                  <span className="block truncate text-xs text-muted-foreground">{reason ?? `Uploaded ${fmtDate(r.created_at)}`}</span>
+                  <span className="block truncate text-[13px] text-muted-foreground">{reason ?? `Uploaded ${fmtDate(r.created_at)}`}</span>
                 </span>
                 {usable ? <RowScore jobId={jobId} resumeId={r.id} enabled /> : <ResumeStatusChip resume={r} />}
               </button>

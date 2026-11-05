@@ -36,8 +36,8 @@ export function Toaster() {
         classNames: {
           toast: "!rounded-2xl !border !border-border/70 !bg-popover !text-popover-foreground !shadow-[0_10px_30px_-10px_rgb(0_0_0/0.25)] !gap-3 !p-4",
           title: "!text-sm !font-semibold",
-          description: "!text-xs !text-muted-foreground",
-          actionButton: "!rounded-full !bg-primary !px-3 !text-primary-foreground !text-xs !font-medium",
+          description: "!text-[13px] !text-muted-foreground",
+          actionButton: "!rounded-full !bg-primary !px-3 !text-primary-foreground !text-[13px] !font-medium",
           cancelButton: "!rounded-full !bg-muted !text-foreground",
           closeButton: "!border-border !bg-popover !text-muted-foreground hover:!bg-muted",
           icon: "!m-0 !size-7",

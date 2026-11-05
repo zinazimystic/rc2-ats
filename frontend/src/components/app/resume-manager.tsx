@@ -84,7 +84,7 @@ export function ResumeUploader({ compact, onUploaded }: { compact?: boolean; onU
       >
         {up.isPending ? <Loader2 className="size-7 animate-spin text-primary" /> : <UploadCloud className="size-7 text-muted-foreground" />}
         <p className="text-sm font-medium">{up.isPending ? "Uploading…" : drag ? "Drop to upload" : "Drag & drop your resume here"}</p>
-        <p className="text-xs text-muted-foreground">PDF or DOCX · up to {MAX_MB} MB · text-based files work best</p>
+        <p className="text-[13px] text-muted-foreground">PDF or DOCX · up to {MAX_MB} MB · text-based files work best</p>
         <Button variant="outline" size="sm" disabled={up.isPending} onClick={() => input.current?.click()}>Choose file</Button>
         <input ref={input} type="file" hidden accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" aria-label="Upload resume" onChange={(e) => { take(e.target.files); e.target.value = ""; }} />
       </div>
@@ -132,14 +132,14 @@ function ResumeCard({
             {r.is_current && <Badge variant="default"><Star /> Primary</Badge>}
             <ResumeStatusChip resume={{ ...r, parse_status: busy && !isBusy(r) ? "processing" : r.parse_status }} />
           </div>
-          <p className="mt-0.5 text-xs text-muted-foreground">
+          <p className="mt-0.5 text-[13px] text-muted-foreground">
             {fmtSize(r.size)} · Uploaded {fmtDate(r.created_at)}
             {count > 0 && <> · Used in {count} application{count === 1 ? "" : "s"}</>}
           </p>
         </div>
       </div>
       {busy && (
-        <div className="mt-3 flex items-center gap-2 rounded-xl bg-muted/60 px-3 py-2 text-xs text-muted-foreground" role="status">
+        <div className="mt-3 flex items-center gap-2 rounded-xl bg-muted/60 px-3 py-2 text-[13px] text-muted-foreground" role="status">
           <Loader2 className="size-3.5 animate-spin text-primary" /> Reading your resume. This usually takes a few seconds.
         </div>
       )}

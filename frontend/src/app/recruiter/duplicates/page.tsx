@@ -13,7 +13,7 @@ import { notifyError } from "@/components/app/common";
 import { cn } from "@/lib/utils";
 
 const Person = ({ c }: { c: CandidateBrief }) => (
-  <div className="min-w-0 flex-1 rounded-md border p-3"><p className="truncate font-medium">{c.full_name}</p><p className="truncate text-xs text-muted-foreground">{c.email}</p><p className="truncate text-xs text-muted-foreground">{[c.headline, c.location].filter(Boolean).join(" · ")}</p></div>
+  <div className="min-w-0 flex-1 rounded-md border p-3"><p className="truncate font-medium">{c.full_name}</p><p className="truncate text-[13px] text-muted-foreground">{c.email}</p><p className="truncate text-[13px] text-muted-foreground">{[c.headline, c.location].filter(Boolean).join(" · ")}</p></div>
 );
 
 export default function Duplicates() {

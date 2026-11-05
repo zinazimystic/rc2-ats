@@ -6,7 +6,7 @@ import { errMsg } from "@/lib/api";
 import { Notice } from "./notice";
 
 export function Skeleton({ className, ...p }: React.ComponentProps<"div">) {
-  return <div className={cn("animate-pulse rounded-md bg-muted", className)} {...p} />;
+  return <div aria-hidden className={cn("skeleton", className)} {...p} />;
 }
 export function Spinner({ className }: { className?: string }) {
   return <Loader2 className={cn("size-4 animate-spin", className)} aria-label="Loading" />;
@@ -43,9 +43,9 @@ export function EmptyState({
 }) {
   return (
     <div className={cn("flex flex-col items-center gap-2 rounded-3xl border border-dashed bg-card/60 p-10 text-center", className)}>
-      <div className="text-muted-foreground">{icon ?? <Inbox className="size-8" />}</div>
+      <div className="grid size-12 place-items-center rounded-2xl bg-muted text-muted-foreground [&_svg]:size-6">{icon ?? <Inbox />}</div>
       <p className="font-medium">{title}</p>
-      {description && <p className="max-w-md text-sm text-muted-foreground">{description}</p>}
+      {description && <p className="max-w-md text-[15px] text-muted-foreground">{description}</p>}
       {action}
     </div>
   );
@@ -91,8 +91,8 @@ export function PageHeader({
   return (
     <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
       <div className="min-w-0">
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
+        <h1 className="text-[28px] leading-tight font-semibold tracking-tight">{title}</h1>
+        {description && <p className="mt-1 text-[15px] text-muted-foreground">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>

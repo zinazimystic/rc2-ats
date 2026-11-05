@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.core.errors import Conflict, Unprocessable
 from app.db.types import utcnow
@@ -142,19 +142,24 @@ def to_interview_out(iv: Interview, application: Application | None = None, auth
     )
 
 
-def load_interviews(db: Session, where_clause) -> list[Interview]:
-    return list(
-        db.scalars(
-            select(Interview)
-            .options(
-                selectinload(Interview.feedback).selectinload(InterviewFeedback.author),
-                selectinload(Interview.application).selectinload(Application.candidate),
-                selectinload(Interview.application).selectinload(Application.job),
-            )
-            .where(where_clause)
-            .order_by(Interview.start_at)
-        ).all()
+def load_interviews(db: Session, where_clause, *, fresh: bool = False, limit: int | None = None, offset: int = 0) -> list[Interview]:
+    """Interviews with application, candidate, job (joined: one query) and feedback + authors (one more), whatever the list size.
+    `fresh=True` re-reads rows already in the session (after a write whose background effects happened elsewhere)."""
+    stmt = (
+        select(Interview)
+        .options(
+            joinedload(Interview.application).joinedload(Application.candidate),
+            joinedload(Interview.application).joinedload(Application.job),
+            selectinload(Interview.feedback).joinedload(InterviewFeedback.author),
+        )
+        .where(where_clause)
+        .order_by(Interview.start_at)
     )
+    if limit is not None:  # feedback is a selectin load, so LIMIT applies cleanly to the interview rows
+        stmt = stmt.limit(limit).offset(offset)
+    if fresh:
+        stmt = stmt.execution_options(populate_existing=True)
+    return list(db.scalars(stmt).unique().all())
 
 
 def _check_future(start_at: datetime) -> None:

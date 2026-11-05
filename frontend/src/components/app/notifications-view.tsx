@@ -36,7 +36,7 @@ function List({ outbox }: { outbox?: boolean }) {
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium">{n.title}</p>
               {n.body && <p className="mt-0.5 text-sm whitespace-pre-wrap text-muted-foreground">{n.body}</p>}
-              <p className="mt-1 text-xs text-muted-foreground">{outbox && n.recipient_email ? `To ${n.recipient_email} · ` : ""}{timeAgo(n.created_at)}</p>
+              <p className="mt-1 text-[13px] text-muted-foreground">{outbox && n.recipient_email ? `To ${n.recipient_email} · ` : ""}{timeAgo(n.created_at)}</p>
             </div>
             {!outbox && !n.read && <Button size="sm" variant="ghost" onClick={(e) => { e.preventDefault(); read.mutate(n.id); }}>Mark read</Button>}
           </div>

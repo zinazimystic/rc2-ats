@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 
 export function InterviewStatusPill({ status, className }: { status: string; className?: string }) {
   const tone = status === "scheduled" ? "bg-primary/12 text-primary" : status === "completed" ? "bg-success/15 text-success" : "bg-muted text-muted-foreground";
-  return <span className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold capitalize", tone, className)}><span className="size-1.5 rounded-full bg-current" />{status}</span>;
+  return <span className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[13px] font-semibold capitalize", tone, className)}><span className="size-1.5 rounded-full bg-current" />{status}</span>;
 }
 
 function minutes(a: string, b: string) {
@@ -42,7 +42,7 @@ export function InterviewDetailDialog({
           <div className="min-w-0 flex-1">
             <DialogTitle className="text-xl">{iv.candidate_name}</DialogTitle>
             <DialogDescription className="mt-1 flex items-center gap-1.5"><Clock className="size-3.5" />{fmtTime(iv.start_at)} – {fmtTime(iv.end_at)} · {iv.job_title}</DialogDescription>
-            <p className="mt-1 text-xs text-muted-foreground">ID {iv.id.slice(0, 8)} · {tz} · {dur} min</p>
+            <p className="mt-1 text-[13px] text-muted-foreground">ID {iv.id.slice(0, 8)} · {tz} · {dur} min</p>
           </div>
           <InterviewStatusPill status={iv.status} />
         </div>
@@ -75,7 +75,7 @@ export function InterviewDetailDialog({
             {iv.feedback.map((f) => (
               <div key={f.id} className="rounded-2xl bg-muted/60 p-4 text-sm">
                 <p className="flex flex-wrap items-center gap-2 font-medium">{f.author_name} <Badge variant={f.recommendation.includes("yes") ? "success" : "destructive"}>{titleCase(f.recommendation)}</Badge></p>
-                <p className="mt-1 text-xs text-muted-foreground">{Object.entries(f.ratings).map(([k, v]) => `${titleCase(k)} ${v}/5`).join(" · ")}</p>
+                <p className="mt-1 text-[13px] text-muted-foreground">{Object.entries(f.ratings).map(([k, v]) => `${titleCase(k)} ${v}/5`).join(" · ")}</p>
                 {f.comments && <p className="mt-2">{f.comments}</p>}
               </div>
             ))}

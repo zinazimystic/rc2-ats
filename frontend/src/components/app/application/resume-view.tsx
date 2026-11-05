@@ -46,7 +46,7 @@ function HighlightedText({ text, ranges, active }: { text: string; ranges: Range
     ref.current?.querySelector("mark.ev-active")?.scrollIntoView({ block: "center", behavior: "smooth" });
   }, [active]);
   return (
-    <div ref={ref} className="max-h-[70vh] overflow-y-auto rounded-lg border bg-muted/30 p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap" tabIndex={0} aria-label="Resume text">
+    <div ref={ref} className="max-h-[70vh] overflow-y-auto rounded-lg border bg-muted/30 p-4 font-mono text-[13px] leading-relaxed whitespace-pre-wrap" tabIndex={0} aria-label="Resume text">
       {parts.map((p, i) => p.hit ? <mark key={i} className={p.active ? "ev ev-active" : "ev"}>{text.slice(p.s, p.e)}</mark> : <span key={i}>{text.slice(p.s, p.e)}</span>)}
     </div>
   );
@@ -83,19 +83,19 @@ export function ResumeView({ resume, evidence, activeKey }: { resume: ResumeDeta
         <Card>
           <CardHeader><CardTitle>Parsed profile</CardTitle></CardHeader>
           <CardContent className="space-y-3 text-sm">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">Read from the uploaded file{p?.total_years_claimed != null && ` · ${p.total_years_claimed} yrs claimed`}</div>
+            <div className="flex items-center gap-2 text-[13px] text-muted-foreground">Read from the uploaded file{p?.total_years_claimed != null && ` · ${p.total_years_claimed} yrs claimed`}</div>
             {p?.summary && <p>{p.summary}</p>}
             {p?.experience.map((x, i) => (
               <div key={i} className="rounded-md border p-2">
                 <div className="flex items-start justify-between gap-2"><p className="font-medium">{x.title ?? "Role"} <span className="font-normal text-muted-foreground">@ {x.company ?? "—"}</span></p><VerificationBadge v={x.verification} /></div>
-                <p className="text-xs text-muted-foreground">{x.start_date ?? "?"} – {x.current ? "present" : (x.end_date ?? "?")}</p>
+                <p className="text-[13px] text-muted-foreground">{x.start_date ?? "?"} – {x.current ? "present" : (x.end_date ?? "?")}</p>
               </div>
             ))}
             {p?.education.map((x, i) => (
-              <div key={i} className="rounded-md border p-2"><div className="flex items-start justify-between gap-2"><p className="font-medium">{x.degree ?? x.level ?? "Education"}{x.field && `, ${x.field}`}</p><VerificationBadge v={x.verification} /></div><p className="text-xs text-muted-foreground">{x.institution} {x.end_year && `· ${x.end_year}`}</p></div>
+              <div key={i} className="rounded-md border p-2"><div className="flex items-start justify-between gap-2"><p className="font-medium">{x.degree ?? x.level ?? "Education"}{x.field && `, ${x.field}`}</p><VerificationBadge v={x.verification} /></div><p className="text-[13px] text-muted-foreground">{x.institution} {x.end_year && `· ${x.end_year}`}</p></div>
             ))}
             {p?.projects.map((x, i) => (
-              <div key={i} className="rounded-md border p-2"><div className="flex items-start justify-between gap-2"><p className="font-medium">{x.name ?? "Project"}</p><VerificationBadge v={x.verification} /></div><p className="text-xs text-muted-foreground">{x.tech.join(", ")}</p></div>
+              <div key={i} className="rounded-md border p-2"><div className="flex items-start justify-between gap-2"><p className="font-medium">{x.name ?? "Project"}</p><VerificationBadge v={x.verification} /></div><p className="text-[13px] text-muted-foreground">{x.tech.join(", ")}</p></div>
             ))}
             {p && p.certifications.length > 0 && <div className="flex flex-wrap gap-1">{p.certifications.map((c) => <Badge key={c} variant="outline">{c}</Badge>)}</div>}
           </CardContent>

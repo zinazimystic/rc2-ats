@@ -1,5 +1,5 @@
 "use client";
-import { useState, type ReactNode } from "react";
+import { useState, useSyncExternalStore, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -14,6 +14,12 @@ import { useCandidateDashboard, usePrefetch } from "@/lib/queries";
 import type { NotificationOut, Role, UserOut } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/app/logo";
+import { RouteSkeleton } from "@/components/app/route-skeleton";
+
+// Dates/times format per viewer locale+timezone, so page content renders after hydration (data is already in the cache) to avoid server/client mismatches.
+const noop = () => () => {};
+function useHydrated() { return useSyncExternalStore(noop, () => true, () => false); }
 
 interface NavItem {
   href: string;
@@ -71,12 +77,10 @@ function Shell({ user, children }: { user: UserOut; children: ReactNode }) {
   const pct = comp ? Math.round(comp.percent) : null;
   const unread = notifs?.length ?? 0;
   const items = NAV[user.role];
-  const first = user.full_name.split(/\s+/)[0] || user.full_name;
-  const subtitle = user.role === "recruiter" ? "Here is what is happening in your hiring pipeline today." : "Find roles matched to your resume and track your applications.";
+  const hydrated = useHydrated();
 
   const nav = (
     <nav aria-label="Main" className="flex flex-col gap-1.5 px-4 py-2">
-      <p className="px-3 pb-1 text-[11px] font-semibold tracking-widest text-white/40 uppercase">Menu</p>
       {items.map((it) => {
         const active = it.exact ? pathname === it.href : pathname.startsWith(it.href);
         return (
@@ -95,7 +99,7 @@ function Shell({ user, children }: { user: UserOut; children: ReactNode }) {
             {it.icon}
             <span className="flex-1">{it.label}</span>
             {it.label === "Notifications" && unread > 0 && (
-              <span className={cn("grid min-w-5 place-items-center rounded-full px-1.5 text-[11px] font-semibold", active ? "bg-white/25 text-white" : "bg-primary text-white")}>{unread}</span>
+              <span className={cn("grid min-w-5 place-items-center rounded-full px-1.5 text-[13px] font-semibold", active ? "bg-white/25 text-white" : "bg-primary text-white")}>{unread}</span>
             )}
           </Link>
         );
@@ -104,12 +108,7 @@ function Shell({ user, children }: { user: UserOut; children: ReactNode }) {
   );
 
   const brand = (
-    <div className="flex h-16 items-center gap-2.5 px-6 font-semibold tracking-tight">
-      <span className="grid size-9 place-items-center rounded-xl bg-primary text-white shadow-lg shadow-primary/40">
-        <Sparkles className="size-[18px]" />
-      </span>
-      RC3 Talent
-    </div>
+    <div className="flex h-16 items-center px-6"><Logo href={`/${user.role}`} size={32} onDark /></div>
   );
 
   const sidebarFoot = (
@@ -119,13 +118,13 @@ function Shell({ user, children }: { user: UserOut; children: ReactNode }) {
         <Link href="/candidate/resume" onMouseEnter={() => prefetch("/candidate/resume")} className="block rounded-2xl bg-white/8 p-4 transition-colors hover:bg-white/12">
           <div className="flex items-center justify-between"><p className="text-sm font-semibold text-white">Complete your profile</p>{pct !== null && <span className="text-sm font-bold text-white tabular-nums">{pct}%</span>}</div>
           {pct !== null && <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/15" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Profile completion"><div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} /></div>}
-          <p className="mt-1 text-xs text-white/55">{comp && comp.missing.length > 0 ? `Still to add: ${comp.missing.slice(0, 2).join(", ")}` : "Add a few details to improve your job matches."}</p>
-          <span className="mt-3 inline-flex rounded-full bg-primary px-3 py-1 text-xs font-medium text-white">Finish profile</span>
+          <p className="mt-1 text-[13px] text-white/60">{comp && comp.missing.length > 0 ? `Still to add: ${comp.missing.slice(0, 2).join(", ")}` : "Add a few details to improve your job matches."}</p>
+          <span className="mt-3 inline-flex rounded-full bg-primary px-3.5 py-1.5 text-[13px] font-medium text-white">Finish profile</span>
         </Link>
       )}
       <div className="flex items-center gap-3 rounded-2xl bg-white/6 p-3">
-        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/90 text-xs font-semibold text-white">{initials(user.full_name)}</span>
-        <div className="min-w-0 text-xs text-white/60">
+        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/90 text-[13px] font-semibold text-white">{initials(user.full_name)}</span>
+        <div className="min-w-0 text-[13px] text-white/60">
           <p className="truncate font-medium text-white">{user.full_name}</p>
           <p className="truncate capitalize">{user.role}</p>
         </div>
@@ -137,12 +136,6 @@ function Shell({ user, children }: { user: UserOut; children: ReactNode }) {
     <div className="flex min-h-screen gap-0 lg:p-3">
       <aside className="sticky top-3 hidden h-[calc(100vh-1.5rem)] w-64 shrink-0 flex-col rounded-3xl bg-sidebar text-white shadow-xl lg:flex">
         {brand}
-        <div className="px-4 pb-2">
-          <div className="flex items-center gap-2 rounded-full bg-white/8 px-4 py-2 text-sm text-white/50">
-            <Search className="size-4" /> <span className="flex-1">Search</span>
-            <kbd className="rounded-md bg-white/10 px-1.5 text-[11px]">⌘F</kbd>
-          </div>
-        </div>
         {nav}
         {sidebarFoot}
       </aside>
@@ -162,14 +155,11 @@ function Shell({ user, children }: { user: UserOut; children: ReactNode }) {
       )}
 
       <div className="flex min-w-0 flex-1 flex-col lg:pl-6">
-        <header className="sticky top-0 z-30 flex min-h-20 items-center gap-3 bg-background/80 px-4 py-3 backdrop-blur lg:static lg:bg-transparent lg:px-0 lg:backdrop-blur-none">
+        <header className="sticky top-0 z-30 flex min-h-16 items-center gap-3 bg-background/80 px-4 py-3 backdrop-blur lg:static lg:bg-transparent lg:px-0 lg:backdrop-blur-none">
           <Button variant="outline" size="icon" className="lg:hidden" aria-label="Open menu" onClick={() => setOpen(true)}>
             <Menu />
           </Button>
-          <div className="min-w-0">
-            <p className="truncate text-xl font-semibold tracking-tight sm:text-2xl">Hello, {first}</p>
-            <p className="hidden truncate text-sm text-muted-foreground sm:block">{subtitle}</p>
-          </div>
+          <Logo href={`/${user.role}`} size={28} withWordmark={false} className="lg:hidden" />
           <div className="ml-auto flex items-center gap-2">
             <Button variant="outline" size="icon" asChild aria-label={`Notifications${unread ? ` (${unread} unread)` : ""}`}>
               <Link href={`/${user.role}/notifications`} className="relative">
@@ -179,8 +169,8 @@ function Shell({ user, children }: { user: UserOut; children: ReactNode }) {
             </Button>
             <ThemeToggle />
             <div className="ml-1 hidden items-center gap-2.5 rounded-full border border-border/60 bg-card py-1 pr-4 pl-1 shadow-soft md:flex">
-              <span className="grid size-8 place-items-center rounded-full bg-primary text-xs font-semibold text-white">{initials(user.full_name)}</span>
-              <div className="min-w-0 text-xs leading-tight">
+              <span className="grid size-8 place-items-center rounded-full bg-primary text-[13px] font-semibold text-white">{initials(user.full_name)}</span>
+              <div className="min-w-0 text-[13px] leading-tight">
                 <p className="max-w-36 truncate font-semibold">{user.full_name}</p>
                 <p className="max-w-36 truncate text-muted-foreground">{user.email}</p>
               </div>
@@ -191,7 +181,7 @@ function Shell({ user, children }: { user: UserOut; children: ReactNode }) {
           </div>
         </header>
         <main id="main" className="mx-auto w-full max-w-7xl flex-1 p-4 pt-2 sm:p-6 sm:pt-2 lg:px-0">
-          {children}
+          {hydrated ? children : <RouteSkeleton />}
         </main>
       </div>
     </div>

@@ -64,7 +64,7 @@ function Completion({ p }: { p: ProfileOut }) {
       <CardContent className="space-y-2 pt-5">
         <div className="flex items-center gap-2"><Target className="size-4 text-primary" /><p className="text-sm font-semibold">Complete your profile</p><span className="ml-auto text-sm font-bold tabular-nums">{Math.round(c.percent)}%</span></div>
         <Progress value={c.percent} />
-        {c.missing.length > 0 && <p className="text-xs text-muted-foreground">Still to add: {c.missing.join(", ")}</p>}
+        {c.missing.length > 0 && <p className="text-[13px] text-muted-foreground">Still to add: {c.missing.join(", ")}</p>}
       </CardContent>
     </Card>
   );

@@ -20,7 +20,7 @@ import { ResumeReviewSheet } from "./resume-review-sheet";
 
 function Preview({ jobId, resumeId }: { jobId: string; resumeId: string }) {
   const m = useMyMatch(jobId, resumeId);
-  if (m.isError) return <p className="rounded-2xl bg-muted/50 p-3 text-xs text-muted-foreground">We couldn’t estimate your fit right now. You can still apply.</p>;
+  if (m.isError) return <p className="rounded-2xl bg-muted/50 p-3 text-[13px] text-muted-foreground">We couldn’t estimate your fit right now. You can still apply.</p>;
   if (!m.data) return <Skeleton className="h-[4.5rem] rounded-2xl" />;
   const gaps = (m.data.gaps ?? []).slice(0, 3);
   return (
@@ -28,7 +28,7 @@ function Preview({ jobId, resumeId }: { jobId: string; resumeId: string }) {
       <ScoreRing value={m.data.score} size={64} label="Estimated fit" />
       <div className="min-w-0 text-sm">
         <p className={cn("font-semibold", bandTone(m.data.band))}>{BAND_LABEL[m.data.band]}</p>
-        {gaps.length > 0 ? <p className="text-xs text-muted-foreground">To strengthen: {gaps.join(", ")}</p> : <p className="text-xs text-muted-foreground">Estimated from your resume. The employer’s review may differ.</p>}
+        {gaps.length > 0 ? <p className="text-[13px] text-muted-foreground">To strengthen: {gaps.join(", ")}</p> : <p className="text-[13px] text-muted-foreground">Estimated from your resume. The employer’s review may differ.</p>}
       </div>
     </div>
   );
@@ -88,7 +88,7 @@ export function ApplyDialog({ jobId, jobTitle, open, onOpenChange }: { jobId: st
               <div className="flex flex-wrap items-center gap-3 rounded-2xl border p-3">
                 <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><FileText className="size-5" /></span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs text-muted-foreground">Applying with</p>
+                  <p className="text-[13px] text-muted-foreground">Applying with</p>
                   <p className="truncate text-sm font-semibold" title={chosen.filename}>{chosen.filename}</p>
                 </div>
                 <ResumePicker jobId={jobId} resumes={list} value={chosen.id} onChange={setPicked} onUpload={() => setUploading(true)} />

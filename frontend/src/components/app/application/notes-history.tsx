@@ -25,7 +25,7 @@ export function NotesTab({ appId }: { appId: string }) {
         <Button loading={add.isPending} disabled={!body.trim()} onClick={() => add.mutate()}>Add note</Button>
       </div>
       {q.isError ? <ErrorState error={q.error} retry={() => q.refetch()} /> : !q.data ? <Skeleton className="h-24" /> : q.data.length === 0 ? <EmptyState title="No notes yet" /> : q.data.map((n) => (
-        <Card key={n.id}><CardContent className="flex items-start justify-between gap-3 pt-4"><div><p className="text-sm whitespace-pre-wrap">{n.body}</p><p className="mt-1 text-xs text-muted-foreground">{n.author_name} · {fmtDateTime(n.created_at)}</p></div><Button variant="ghost" size="icon" aria-label="Delete note" onClick={() => del.mutate(n.id)}><Trash2 /></Button></CardContent></Card>
+        <Card key={n.id}><CardContent className="flex items-start justify-between gap-3 pt-4"><div><p className="text-sm whitespace-pre-wrap">{n.body}</p><p className="mt-1 text-[13px] text-muted-foreground">{n.author_name} · {fmtDateTime(n.created_at)}</p></div><Button variant="ghost" size="icon" aria-label="Delete note" onClick={() => del.mutate(n.id)}><Trash2 /></Button></CardContent></Card>
       ))}
     </div>
   );
@@ -43,7 +43,7 @@ export function HistoryTab({ appId }: { appId: string }) {
           <span className="absolute top-1.5 -left-[1.9rem] size-3 rounded-full border-2 border-primary bg-background" aria-hidden />
           <p className="text-sm font-medium">{titleCase(h.action)}{(h.from_value || h.to_value) && <span className="font-normal text-muted-foreground"> · {h.from_value ?? "—"} → {h.to_value ?? "—"}</span>}</p>
           {h.note && <p className="text-sm text-muted-foreground">“{h.note}”</p>}
-          <p className="text-xs text-muted-foreground">{h.actor_name ?? "System"}{h.actor_role && ` (${h.actor_role})`} · {fmtDateTime(h.created_at)}</p>
+          <p className="text-[13px] text-muted-foreground">{h.actor_name ?? "System"}{h.actor_role && ` (${h.actor_role})`} · {fmtDateTime(h.created_at)}</p>
         </li>
       ))}
     </ol>

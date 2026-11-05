@@ -57,7 +57,7 @@ function Applicants({ jobId }: { jobId: string }) {
         cell: ({ row }) => (
           <div className="min-w-40">
             <Link href={`/recruiter/applications/${row.original.id}`} className="font-medium hover:text-primary hover:underline" onClick={(e) => e.stopPropagation()}>{row.original.candidate.full_name}</Link>
-            <p className="text-xs text-muted-foreground">{row.original.candidate.headline ?? row.original.candidate.email}</p>
+            <p className="text-[13px] text-muted-foreground">{row.original.candidate.headline ?? row.original.candidate.email}</p>
             {row.original.is_duplicate && <Badge variant="warning" className="mt-1">Possible duplicate</Badge>}
           </div>
         ),
@@ -70,7 +70,7 @@ function Applicants({ jobId }: { jobId: string }) {
           ) : (
             <div>
               <ScoreBar value={row.original.effective_score} />
-              {row.original.override_score != null && <span className="text-xs text-muted-foreground">overridden (AI {fmtScore(row.original.total_score)})</span>}
+              {row.original.override_score != null && <span className="text-[13px] text-muted-foreground">overridden (AI {fmtScore(row.original.total_score)})</span>}
             </div>
           ),
       }),
@@ -79,7 +79,7 @@ function Applicants({ jobId }: { jobId: string }) {
         header: "Skills · Exp · Proj · Qual",
         cell: ({ row }) => {
           const c = row.original.components;
-          return <span className="text-xs whitespace-nowrap tabular-nums text-muted-foreground">{[c.skills, c.experience, c.projects, c.qualifications].map((v) => (v == null ? "–" : Math.round(v))).join(" · ")}</span>;
+          return <span className="text-[13px] whitespace-nowrap tabular-nums text-muted-foreground">{[c.skills, c.experience, c.projects, c.qualifications].map((v) => (v == null ? "–" : Math.round(v))).join(" · ")}</span>;
         },
       }),
       col.display({ id: "matched", header: "Matched", cell: ({ row }) => <SkillChips skills={row.original.matched_skills} tone="success" max={3} /> }),
@@ -90,7 +90,7 @@ function Applicants({ jobId }: { jobId: string }) {
         header: "Flags",
         cell: ({ row }) => (row.original.flags.length ? <Badge variant="warning" title={row.original.flags.map((f) => f.message).join("\n")}>{row.original.flags.length}</Badge> : null),
       }),
-      col.accessor("applied_at", { header: "Applied", cell: (c) => <span className="text-xs whitespace-nowrap text-muted-foreground">{fmtDate(c.getValue())}</span> }),
+      col.accessor("applied_at", { header: "Applied", cell: (c) => <span className="text-[13px] whitespace-nowrap text-muted-foreground">{fmtDate(c.getValue())}</span> }),
     ],
     [picked],
   );
@@ -116,7 +116,7 @@ function Applicants({ jobId }: { jobId: string }) {
           </Button>
         </div>
       </div>
-      {picked.length === 1 && <p className="text-xs text-muted-foreground">Select 2–4 candidates to compare side-by-side.</p>}
+      {picked.length === 1 && <p className="text-[13px] text-muted-foreground">Select 2–4 candidates to compare side-by-side.</p>}
       {q.isError ? <ErrorState error={q.error} retry={() => q.refetch()} /> : !q.data ? <Skeleton className="h-64" /> : q.data.items.length === 0 ? (
         <EmptyState icon={<Users className="size-8" />} title={status || dSkill || dSearch || dMin ? "No applicants match these filters" : "No applicants yet"} description="Applications appear here ranked by evidence-based score as soon as candidates apply." />
       ) : (
@@ -131,7 +131,7 @@ function Applicants({ jobId }: { jobId: string }) {
               ))}
             </TBody>
           </Table>
-          <p className="border-t px-4 py-2 text-xs text-muted-foreground">{q.data.total} applicant(s) total</p>
+          <p className="border-t px-4 py-2 text-[13px] text-muted-foreground">{q.data.total} applicant(s) total</p>
         </Card>
       )}
     </div>
@@ -156,8 +156,8 @@ function TalentPool({ jobId }: { jobId: string }) {
           <div className="flex items-start justify-between gap-2">
             <div>
               <p className="font-medium">{t.candidate.full_name}</p>
-              <p className="text-xs text-muted-foreground">{t.candidate.headline ?? t.candidate.email}</p>
-              {t.previously_applied_to && <p className="mt-1 text-xs text-muted-foreground">Previously applied to: {t.previously_applied_to}</p>}
+              <p className="text-[13px] text-muted-foreground">{t.candidate.headline ?? t.candidate.email}</p>
+              {t.previously_applied_to && <p className="mt-1 text-[13px] text-muted-foreground">Previously applied to: {t.previously_applied_to}</p>}
             </div>
             <div className="w-28"><ScoreBar value={t.score} /></div>
           </div>
@@ -229,7 +229,7 @@ export default function JobDetail() {
               <CardContent className="space-y-3 text-sm">
                 {(["required", "preferred"] as const).map((k) => (
                   <div key={k}>
-                    <p className="mb-1 text-xs font-medium text-muted-foreground uppercase">{k}</p>
+                    <p className="mb-1 text-[13px] font-medium text-muted-foreground uppercase">{k}</p>
                     <div className="flex flex-wrap gap-1">{j.requirements.filter((r) => r.kind === k).map((r) => <Badge key={r.id} variant={k === "required" ? "default" : "secondary"}>{r.skill} · {r.importance}</Badge>)}</div>
                   </div>
                 ))}

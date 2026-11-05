@@ -7,7 +7,7 @@ from sqlalchemy import exists, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.errors import Conflict, NotFound
-from app.models import Application, CandidateProfile, Job, Resume, User
+from app.models import Application, CandidateProfile, Job, Resume, User, job_vector_options
 from app.schemas.common import JobBrief
 from app.schemas.search import (
     MyMatchComponents, MyMatchImprovement, MyMatchOut, MyMatchRequirement, MyMatchResume,
@@ -68,7 +68,7 @@ def my_match(db: Session, user: User, job_id: uuid.UUID, resume_id: uuid.UUID | 
             exists().where(Application.job_id == Job.id, Application.candidate_id == user.id, Application.status != "withdrawn"),
             exists().where(Application.job_id == Job.id, Application.candidate_id == user.id),
         )
-        .options(joinedload(Job.requirements))
+        .options(*job_vector_options(join=True))
         .where(Job.id == job_id)
     ).unique().first()
     if row is None:
@@ -148,5 +148,5 @@ def my_match(db: Session, user: User, job_id: uuid.UUID, resume_id: uuid.UUID | 
         components=MyMatchComponents(**{k: comps.get(k) for k in ("skills", "experience", "projects", "qualifications")}),
         requirements=reqs, strengths=strengths, gaps=gaps[:8], improvements=improvements,
         tips=_tips(results, sc.components, resume), already_applied=bool(applied_active),
-        semantic_available=bool(job.embedding is not None and resume.doc_embedding is not None),
+        semantic_available=bool(job.embedding is not None and any(c.embedding is not None for c in resume.chunks)),
     )
