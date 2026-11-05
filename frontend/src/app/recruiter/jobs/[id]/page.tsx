@@ -1,10 +1,10 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { GitCompareArrows, Lock, Pencil, Unlock, UserPlus, Users } from "lucide-react";
 import { api, qs } from "@/lib/api";
 import type { ApplicationRowOut, JobApplicantsOut, JobOut, TalentPoolItem } from "@/lib/types";
@@ -180,7 +180,11 @@ function TalentPool({ jobId }: { jobId: string }) {
 export default function JobDetail() {
   const { id } = useParams<{ id: string }>();
   const qc = useQueryClient();
-  const job = useQuery({ queryKey: ["job", id], queryFn: () => api<JobOut>(`/jobs/${id}`) });
+  const job = useQuery({ queryKey: ["job", id], queryFn: () => api<JobOut>(`/jobs/${id}`), staleTime: 45_000 });
+  // Start the applicants request in parallel with the job instead of after it.
+  useEffect(() => {
+    qc.prefetchQuery({ queryKey: ["applicants", id, "", "", "", "", "score"], queryFn: () => api<JobApplicantsOut>(`/jobs/${id}/applications${qs({ sort: "score" })}`), staleTime: 45_000 });
+  }, [id, qc]);
   const toggle = useMutation({
     mutationFn: (action: "close" | "reopen") => api<JobOut>(`/jobs/${id}/${action}`, { method: "POST" }),
     onSuccess: (j) => { qc.setQueryData(["job", id], j); qc.invalidateQueries({ queryKey: ["jobs"] }); toast.success(j.status === "closed" ? "Job closed — no new applications" : "Job reopened"); },
@@ -188,7 +192,12 @@ export default function JobDetail() {
   });
   if (job.isError) return <ErrorState error={job.error} retry={() => job.refetch()} />;
   const j = job.data;
-  if (!j) return <Skeleton className="h-96" />;
+  if (!j) return (
+    <div aria-busy="true" aria-label="Loading job">
+      <Skeleton className="mb-2 h-8 w-72" /><Skeleton className="mb-6 h-4 w-96" />
+      <Skeleton className="mb-4 h-10 w-80 rounded-full" /><Skeleton className="h-96 rounded-3xl" />
+    </div>
+  );
   return (
     <>
       <PageHeader

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from sqlalchemy import and_, or_, select, text as sql_text
-from sqlalchemy.orm import Session, selectinload, undefer
+from sqlalchemy.orm import Session, joinedload, selectinload, undefer
 
 from app.core.errors import NotFound
 from app.db.types import utcnow
@@ -70,7 +70,7 @@ def _current_resumes(db: Session, candidate_ids: list[UUID]) -> dict[UUID, Resum
     if not candidate_ids:
         return {}
     rows = db.scalars(
-        select(Resume).where(Resume.candidate_id.in_(candidate_ids), Resume.parse_status == "parsed")
+        select(Resume).where(Resume.candidate_id.in_(candidate_ids), Resume.parse_status == "parsed", Resume.deleted_at.is_(None))
         .order_by(Resume.is_current.desc(), Resume.created_at.desc())
         .options(selectinload(Resume.skills), undefer(Resume.text))
     ).all()
@@ -227,17 +227,18 @@ def _split(results) -> tuple[list[str], list[str]]:  # noqa: ANN001
 
 
 # --------------------------------------------------------------------------- recommendations
-def recommend_jobs(db: Session, candidate: User, limit: int = 10) -> list[RecommendationOut]:
-    resume = db.scalars(
-        select(Resume).where(Resume.candidate_id == candidate.id, Resume.parse_status == "parsed")
+def best_resume(db: Session, candidate: User) -> Resume | None:
+    """The candidate's current parsed, non-deleted resume with skills (joined: one query). Chunks load lazily (one more)."""
+    return db.scalars(
+        select(Resume).where(Resume.candidate_id == candidate.id, Resume.parse_status == "parsed", Resume.deleted_at.is_(None))
         .order_by(Resume.is_current.desc(), Resume.created_at.desc())
-        .options(selectinload(Resume.skills), selectinload(Resume.chunks))
-    ).first()
-    if resume is None:
-        return []
-    applied = set(db.scalars(select(Application.job_id).where(Application.candidate_id == candidate.id)))
-    jobs = db.scalars(select(Job).where(Job.status == "open").options(selectinload(Job.requirements))).all()
-    interests = tuple((candidate.profile.interests if candidate.profile else None) or ())
+        .options(joinedload(Resume.skills))
+        .limit(1)
+    ).unique().first()
+
+
+def recommend_from(resume: Resume, jobs: list[Job], applied: set, interests: tuple[str, ...], limit: int = 10) -> list[RecommendationOut]:
+    """Score already-loaded jobs against a resume using STORED vectors only (no embedding API call per request)."""
     recs: list[RecommendationOut] = []
     for job in jobs:
         if job.id in applied:
@@ -254,6 +255,23 @@ def recommend_jobs(db: Session, candidate: User, limit: int = 10) -> list[Recomm
                                       score=round(total, 1), matched_skills=matched, missing_skills=missing, reason=reason))
     recs.sort(key=lambda r: -r.score)
     return recs[:limit]
+
+
+def open_jobs_query(exclude_applied_for: UUID | None = None):
+    stmt = select(Job).where(Job.status == "open").options(joinedload(Job.requirements)).order_by(Job.created_at.desc())
+    if exclude_applied_for is not None:
+        stmt = stmt.where(Job.id.not_in(select(Application.job_id).where(Application.candidate_id == exclude_applied_for)))
+    return stmt
+
+
+def recommend_jobs(db: Session, candidate: User, limit: int = 10) -> list[RecommendationOut]:
+    """Round trips: resume+skills (1), chunks (1), open jobs+requirements not yet applied to (1), interests (1)."""
+    resume = best_resume(db, candidate)
+    if resume is None:
+        return []
+    jobs = db.scalars(open_jobs_query(candidate.id)).unique().all()
+    interests = tuple(db.scalar(select(CandidateProfile.interests).where(CandidateProfile.user_id == candidate.id)) or ())
+    return recommend_from(resume, list(jobs), set(), interests, limit)
 
 
 # --------------------------------------------------------------------------- talent pool

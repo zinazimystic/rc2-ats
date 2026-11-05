@@ -4,7 +4,9 @@ from __future__ import annotations
 import logging
 import re
 
-from pydantic import BaseModel, Field, field_validator
+from typing import Annotated, Optional
+
+from pydantic import BaseModel, BeforeValidator, ValidationError
 
 from app.schemas.common import Flag
 from app.schemas.resume import EducationItem, ExperienceItem, ParsedResume, ProjectItem
@@ -22,70 +24,132 @@ _RANK = {"verified": 0, "fuzzy": 1, "unverified": 2}
 
 
 # --------------------------------------------------------------------------- LLM output schema (lenient)
+# Models drift: null where a list is expected, a string instead of a list, numbers as strings, nested objects, bare strings
+# instead of {"name": ...}. Everything is coerced; unusable items are dropped instead of failing the whole resume.
+def _to_str(v):  # noqa: ANN001
+    if v is None or isinstance(v, bool):
+        return None
+    if isinstance(v, str):
+        return v.strip() or None
+    if isinstance(v, (int, float)):
+        return str(v)
+    if isinstance(v, list):
+        return ", ".join(x for x in (_to_str(i) for i in v) if x) or None
+    if isinstance(v, dict):
+        for k in ("name", "title", "text", "value", "degree", "description"):
+            if k in v:
+                return _to_str(v[k])
+        return ", ".join(x for x in (_to_str(i) for i in v.values()) if x) or None
+    return None
+
+
+def _to_str_list(v):  # noqa: ANN001
+    if v is None:
+        return []
+    if isinstance(v, str):
+        return [x.strip() for x in re.split(r"[,;\n]", v) if x.strip()]
+    if isinstance(v, dict):
+        v = list(v.values())
+    if not isinstance(v, list):
+        return []
+    return [x for x in (_to_str(i) for i in v) if x]
+
+
+def _to_bool(v):  # noqa: ANN001
+    if isinstance(v, str):
+        return v.strip().lower() in ("true", "yes", "1", "current", "present")
+    return bool(v)
+
+
+def _to_int(v):  # noqa: ANN001
+    try:
+        return int(float(str(v).strip()[:4])) if v not in (None, "") else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _to_float(v):  # noqa: ANN001
+    try:
+        return float(re.sub(r"[^0-9.]", "", v) if isinstance(v, str) else v) if v not in (None, "") else None
+    except (TypeError, ValueError):
+        return None
+
+
+Str = Annotated[Optional[str], BeforeValidator(_to_str)]
+StrList = Annotated[list[str], BeforeValidator(_to_str_list)]
+Bool = Annotated[bool, BeforeValidator(_to_bool)]
+Int = Annotated[Optional[int], BeforeValidator(_to_int)]
+Float = Annotated[Optional[float], BeforeValidator(_to_float)]
+
+
+def _items(model_cls, bare_key: str | None = None):  # noqa: ANN001
+    """before-validator for a list of nested models: tolerate null/single object, bare strings, and drop bad items."""
+
+    def conv(v):  # noqa: ANN001
+        if v is None:
+            return []
+        if isinstance(v, dict):
+            v = [v]
+        if not isinstance(v, list):
+            return []
+        out = []
+        for item in v:
+            if isinstance(item, str) and bare_key:
+                item = {bare_key: item}
+            if not isinstance(item, dict):
+                continue
+            try:
+                out.append(model_cls.model_validate(item))
+            except ValidationError:
+                continue
+        return out
+
+    return conv
+
+
 class _Skill(BaseModel):
     name: str
-    category: str | None = None
-    evidence: str | None = None
+    category: Str = None
+    evidence: Str = None
 
 
 class _Exp(BaseModel):
-    title: str | None = None
-    company: str | None = None
-    start_date: str | None = None
-    end_date: str | None = None
-    current: bool = False
-    description: str | None = None
-    skills: list[str] = []
-    evidence: str | None = None
-
-    @field_validator("start_date", "end_date", mode="before")
-    @classmethod
-    def _s(cls, v):
-        return None if v is None else str(v)
+    title: Str = None
+    company: Str = None
+    start_date: Str = None
+    end_date: Str = None
+    current: Bool = False
+    description: Str = None
+    skills: StrList = []
+    evidence: Str = None
 
 
 class _Edu(BaseModel):
-    degree: str | None = None
-    level: str | None = None
-    field: str | None = None
-    institution: str | None = None
-    start_year: int | None = None
-    end_year: int | None = None
-    evidence: str | None = None
-
-    @field_validator("start_year", "end_year", mode="before")
-    @classmethod
-    def _y(cls, v):
-        try:
-            return int(v) if v not in (None, "") else None
-        except (TypeError, ValueError):
-            return None
+    degree: Str = None
+    level: Str = None
+    field: Str = None
+    institution: Str = None
+    start_year: Int = None
+    end_year: Int = None
+    evidence: Str = None
 
 
 class _Proj(BaseModel):
-    name: str | None = None
-    description: str | None = None
-    tech: list[str] = []
-    url: str | None = None
-    evidence: str | None = None
+    name: Str = None
+    description: Str = None
+    tech: StrList = []
+    url: Str = None
+    evidence: Str = None
 
 
 class LLMExtraction(BaseModel):
-    summary: str | None = None
-    skills: list[_Skill] = []
-    experience: list[_Exp] = []
-    education: list[_Edu] = []
-    projects: list[_Proj] = []
-    certifications: list[str] = []
-    total_years_claimed: float | None = None
-
-    @field_validator("total_years_claimed", mode="before")
-    @classmethod
-    def _t(cls, v):
-        try:
-            return float(v) if v not in (None, "") else None
-        except (TypeError, ValueError):
-            return None
+    summary: Str = None
+    skills: Annotated[list[_Skill], BeforeValidator(_items(_Skill, "name"))] = []
+    experience: Annotated[list[_Exp], BeforeValidator(_items(_Exp, "title"))] = []
+    education: Annotated[list[_Edu], BeforeValidator(_items(_Edu, "degree"))] = []
+    projects: Annotated[list[_Proj], BeforeValidator(_items(_Proj, "name"))] = []
+    certifications: StrList = []
+    total_years_claimed: Float = None
 
 
 # --------------------------------------------------------------------------- helpers
@@ -116,18 +180,20 @@ def _skill_supported(name: str, quote: str) -> bool:
     return bool(re.search(r"(?<![A-Za-z0-9+#])" + re.escape(name.strip()) + r"(?![A-Za-z0-9+#])", quote, re.I))
 
 
-def _llm_extract(redacted_text: str) -> LLMExtraction:
+def _llm_extract(redacted_text: str, refresh: bool = False) -> LLMExtraction:
+    extra = {"refresh": True} if refresh else {}  # keeps the plain call signature when not refreshing
     return llm.json_call(
         prompts.RESUME_EXTRACT_SYSTEM,
         f"<resume>\n{redacted_text}\n</resume>\nReturn the json object now.",
         LLMExtraction,
-        max_tokens=4000,
+        max_tokens=8000,
         cache_kind="resume_extract",
+        **extra,
     )
 
 
 # --------------------------------------------------------------------------- main entry
-def extract(text: str, names: list[str] | tuple[str, ...] = ()) -> Extraction:
+def extract(text: str, names: list[str] | tuple[str, ...] = (), refresh: bool = False) -> Extraction:
     """Extract structured data from the ORIGINAL resume text. Offsets in the result index into `text`."""
     tax = taxonomy()
     sections = detect_sections(text)
@@ -142,7 +208,7 @@ def extract(text: str, names: list[str] | tuple[str, ...] = ()) -> Extraction:
     out: LLMExtraction | None = None
     if llm.llm_available():
         try:
-            out = _llm_extract(red.text)
+            out = _llm_extract(red.text, refresh)
         except llm.LLMUnavailable as exc:
             warnings.append(f"AI extraction unavailable ({exc}); used rule-based extraction.")
         except llm.LLMError as exc:

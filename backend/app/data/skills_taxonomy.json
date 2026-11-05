@@ -42,7 +42,8 @@
     "NestJS": 0.5,
     "JavaScript": 0.7
    },
-   "learn": "Convert a small JavaScript project to TypeScript with strict mode enabled."
+   "learn": "Convert a small JavaScript project to TypeScript with strict mode enabled.",
+   "describe": "TypeScript: statically typed JavaScript with compile-time type checks"
   },
   "Java": {
    "category": "language",
@@ -57,7 +58,8 @@
     "C#": 0.55,
     "Kotlin": 0.55,
     "Scala": 0.5,
-    "Go": 0.4
+    "Go": 0.4,
+    "Maven": 0.3
    },
    "learn": "Build a small console or REST application in Java."
   },
@@ -494,7 +496,8 @@
     "pgvector": 0.6,
     "Supabase": 0.6
    },
-   "learn": "Model a relational schema in PostgreSQL and tune queries with EXPLAIN."
+   "learn": "Model a relational schema in PostgreSQL and tune queries with EXPLAIN.",
+   "describe": "PostgreSQL relational database: SQL queries, schema design and indexing"
   },
   "MySQL": {
    "category": "database",
@@ -679,7 +682,8 @@
     "gRPC": 0.45,
     "OAuth": 0.3
    },
-   "learn": "Design and document a REST API following resource conventions."
+   "learn": "Design and document a REST API following resource conventions.",
+   "describe": "designing and building REST APIs and web services over HTTP"
   },
   "gRPC": {
    "category": "technology",
@@ -703,7 +707,8 @@
     "Docker": 0.35,
     "System Design": 0.5
    },
-   "learn": "Split a small monolith into two services communicating over HTTP or a queue."
+   "learn": "Split a small monolith into two services communicating over HTTP or a queue.",
+   "describe": "microservice architecture: independently deployable services communicating over messaging and HTTP"
   },
   "Docker": {
    "category": "devops",
@@ -722,7 +727,8 @@
     "CI/CD": 0.3,
     "Microservices": 0.35
    },
-   "learn": "Containerize a small app with a Dockerfile and docker-compose."
+   "learn": "Containerize a small app with a Dockerfile and docker-compose.",
+   "describe": "containerization with Docker: containers, compose files and image registries"
   },
   "Kubernetes": {
    "category": "devops",
@@ -738,7 +744,8 @@
     "Docker": 0.55,
     "Terraform": 0.3
    },
-   "learn": "Deploy a small app to a local Kubernetes cluster (kind or minikube)."
+   "learn": "Deploy a small app to a local Kubernetes cluster (kind or minikube).",
+   "describe": "container orchestration with Kubernetes: clusters, deployments and scaling"
   },
   "AWS": {
    "category": "cloud",
@@ -775,12 +782,12 @@
    "category": "cloud",
    "aliases": [
     "gcp",
-    "google cloud platform",
-    "bigquery"
+    "google cloud platform"
    ],
    "related": {
     "AWS": 0.6,
-    "Azure": 0.6
+    "Azure": 0.6,
+    "BigQuery": 0.5
    },
    "learn": "Build a small project using Google Cloud and read its official documentation."
   },
@@ -812,17 +819,18 @@
     "continuous integration",
     "continuous delivery",
     "continuous deployment",
-    "github actions",
-    "gitlab ci",
-    "jenkins",
     "circleci",
     "azure pipelines"
    ],
    "related": {
     "Docker": 0.3,
-    "Git": 0.3
+    "Git": 0.3,
+    "Jenkins": 0.7,
+    "GitHub Actions": 0.7,
+    "GitLab CI": 0.7
    },
-   "learn": "Set up a CI pipeline that lints, tests and builds a project on every push."
+   "learn": "Set up a CI pipeline that lints, tests and builds a project on every push.",
+   "describe": "continuous integration and continuous delivery: automated build, test and deployment pipelines that release every merge"
   },
   "Git": {
    "category": "devops",
@@ -881,17 +889,19 @@
    "aliases": [
     "ml",
     "machine-learning",
-    "scikit-learn",
-    "sklearn",
     "xgboost"
    ],
    "related": {
     "Deep Learning": 0.6,
     "Statistics": 0.5,
     "Data Analysis": 0.45,
-    "NLP": 0.5
+    "NLP": 0.5,
+    "scikit-learn": 0.6,
+    "MLOps": 0.35,
+    "Computer Vision": 0.4
    },
-   "learn": "Train and evaluate a model on a public dataset with scikit-learn."
+   "learn": "Train and evaluate a model on a public dataset with scikit-learn.",
+   "describe": "machine learning: training, validating and deploying predictive models"
   },
   "Deep Learning": {
    "category": "data",
@@ -904,9 +914,11 @@
    "related": {
     "Machine Learning": 0.6,
     "PyTorch": 0.6,
-    "TensorFlow": 0.6
+    "TensorFlow": 0.6,
+    "Computer Vision": 0.5
    },
-   "learn": "Build a small project using Deep Learning and read its official documentation."
+   "learn": "Build a small project using Deep Learning and read its official documentation.",
+   "describe": "deep learning with neural networks"
   },
   "PyTorch": {
    "category": "data",
@@ -915,7 +927,8 @@
    ],
    "related": {
     "TensorFlow": 0.7,
-    "Deep Learning": 0.6
+    "Deep Learning": 0.6,
+    "Computer Vision": 0.4
    },
    "learn": "Build a small project using PyTorch and read its official documentation."
   },
@@ -997,26 +1010,30 @@
     "etl",
     "elt",
     "data pipelines",
-    "airflow",
-    "apache airflow",
-    "dbt",
     "data warehouse"
    ],
    "related": {
     "Spark": 0.6,
-    "SQL": 0.5
+    "SQL": 0.5,
+    "Airflow": 0.6,
+    "ETL": 0.7,
+    "dbt": 0.5,
+    "Snowflake": 0.4,
+    "BigQuery": 0.4,
+    "Hadoop": 0.4
    },
-   "learn": "Build a small ETL pipeline with Airflow or dbt."
+   "learn": "Build a small ETL pipeline with Airflow or dbt.",
+   "describe": "data engineering: building and maintaining data pipelines and warehouses"
   },
   "Spark": {
    "category": "data",
    "aliases": [
     "pyspark",
-    "apache spark",
-    "hadoop"
+    "apache spark"
    ],
    "related": {
-    "Data Engineering": 0.6
+    "Data Engineering": 0.6,
+    "Hadoop": 0.6
    },
    "learn": "Build a small project using Spark and read its official documentation."
   },
@@ -1070,7 +1087,6 @@
     "unit tests",
     "pytest",
     "unittest",
-    "junit",
     "jest",
     "tdd",
     "test driven development",
@@ -1079,24 +1095,28 @@
    ],
    "related": {
     "Pytest": 0.8,
-    "Test Automation": 0.5
+    "Test Automation": 0.5,
+    "JUnit": 0.7
    },
    "learn": "Add unit tests with a coverage target to an existing project."
   },
   "Test Automation": {
    "category": "practice",
    "aliases": [
-    "selenium",
-    "cypress",
-    "playwright",
     "e2e testing",
     "qa automation",
     "automated testing"
    ],
    "related": {
-    "Unit Testing": 0.5
+    "Unit Testing": 0.5,
+    "Selenium": 0.7,
+    "Cypress": 0.7,
+    "Playwright": 0.7,
+    "JMeter": 0.35,
+    "JUnit": 0.4
    },
-   "learn": "Build a small project using Test Automation and read its official documentation."
+   "learn": "Build a small project using Test Automation and read its official documentation.",
+   "describe": "test automation: automated regression and end-to-end test suites instead of manual testing"
   },
   "Agile": {
    "category": "practice",
@@ -1223,11 +1243,10 @@
   },
   "Flutter": {
    "category": "framework",
-   "aliases": [
-    "dart"
-   ],
+   "aliases": [],
    "related": {
-    "React Native": 0.6
+    "React Native": 0.6,
+    "Dart": 0.5
    },
    "learn": "Build a small project using Flutter and read its official documentation."
   },
@@ -1501,6 +1520,271 @@
    ],
    "related": {},
    "learn": "Build a small project using Technical Writing and read its official documentation."
+  },
+  "Selenium": {
+   "category": "testing",
+   "aliases": [
+    "selenium webdriver",
+    "webdriver"
+   ],
+   "related": {
+    "Test Automation": 0.7,
+    "Cypress": 0.5,
+    "Playwright": 0.55
+   },
+   "learn": "Build a small hands-on project using Selenium and read its official documentation."
+  },
+  "Cypress": {
+   "category": "testing",
+   "aliases": [],
+   "related": {
+    "Test Automation": 0.7,
+    "Selenium": 0.5,
+    "Playwright": 0.6
+   },
+   "learn": "Build a small hands-on project using Cypress and read its official documentation."
+  },
+  "Playwright": {
+   "category": "testing",
+   "aliases": [],
+   "related": {
+    "Test Automation": 0.7,
+    "Selenium": 0.55,
+    "Cypress": 0.6
+   },
+   "learn": "Build a small hands-on project using Playwright and read its official documentation."
+  },
+  "JMeter": {
+   "category": "testing",
+   "aliases": [
+    "apache jmeter",
+    "load testing",
+    "performance testing"
+   ],
+   "related": {
+    "Test Automation": 0.4,
+    "Postman": 0.3
+   },
+   "learn": "Build a small hands-on project using JMeter and read its official documentation."
+  },
+  "JUnit": {
+   "category": "testing",
+   "aliases": [
+    "junit5",
+    "junit 5",
+    "testng"
+   ],
+   "related": {
+    "Unit Testing": 0.7,
+    "Pytest": 0.5,
+    "Test Automation": 0.4
+   },
+   "learn": "Build a small hands-on project using JUnit and read its official documentation."
+  },
+  "Jenkins": {
+   "category": "devops",
+   "aliases": [
+    "jenkinsfile"
+   ],
+   "related": {
+    "CI/CD": 0.7,
+    "GitHub Actions": 0.6,
+    "GitLab CI": 0.6
+   },
+   "learn": "Build a small hands-on project using Jenkins and read its official documentation."
+  },
+  "GitHub Actions": {
+   "category": "devops",
+   "aliases": [
+    "github workflows"
+   ],
+   "related": {
+    "CI/CD": 0.7,
+    "Jenkins": 0.6,
+    "GitLab CI": 0.6
+   },
+   "learn": "Build a small hands-on project using GitHub Actions and read its official documentation."
+  },
+  "GitLab CI": {
+   "category": "devops",
+   "aliases": [
+    "gitlab ci/cd",
+    "gitlab pipelines"
+   ],
+   "related": {
+    "CI/CD": 0.7,
+    "Jenkins": 0.6,
+    "GitHub Actions": 0.6
+   },
+   "learn": "Build a small hands-on project using GitLab CI and read its official documentation."
+  },
+  "Maven": {
+   "category": "tool",
+   "aliases": [
+    "apache maven"
+   ],
+   "related": {
+    "Gradle": 0.6,
+    "Java": 0.35
+   },
+   "learn": "Build a small hands-on project using Maven and read its official documentation."
+  },
+  "Gradle": {
+   "category": "tool",
+   "aliases": [],
+   "related": {
+    "Maven": 0.6,
+    "Java": 0.35,
+    "Kotlin": 0.3
+   },
+   "learn": "Build a small hands-on project using Gradle and read its official documentation."
+  },
+  "Airflow": {
+   "category": "data",
+   "aliases": [
+    "apache airflow"
+   ],
+   "related": {
+    "ETL": 0.6,
+    "Data Engineering": 0.6,
+    "dbt": 0.4,
+    "Spark": 0.3
+   },
+   "learn": "Build a small hands-on project using Airflow and read its official documentation.",
+   "describe": "workflow orchestration, scheduled data pipelines and DAGs"
+  },
+  "ETL": {
+   "category": "data",
+   "aliases": [
+    "elt",
+    "etl pipeline",
+    "etl pipelines",
+    "extract transform load"
+   ],
+   "related": {
+    "Data Engineering": 0.7,
+    "Airflow": 0.5,
+    "dbt": 0.5,
+    "SQL": 0.3
+   },
+   "learn": "Build a small hands-on project using ETL and read its official documentation.",
+   "describe": "extract, transform and load pipelines that clean data from many sources and load it into a data warehouse"
+  },
+  "dbt": {
+   "category": "data",
+   "aliases": [
+    "data build tool"
+   ],
+   "related": {
+    "ETL": 0.5,
+    "SQL": 0.4,
+    "Data Engineering": 0.5,
+    "Airflow": 0.4
+   },
+   "learn": "Build a small hands-on project using dbt and read its official documentation."
+  },
+  "Snowflake": {
+   "category": "data",
+   "aliases": [],
+   "related": {
+    "BigQuery": 0.5,
+    "SQL": 0.4,
+    "Data Engineering": 0.4
+   },
+   "learn": "Build a small hands-on project using Snowflake and read its official documentation."
+  },
+  "BigQuery": {
+   "category": "data",
+   "aliases": [
+    "google bigquery"
+   ],
+   "related": {
+    "Snowflake": 0.5,
+    "SQL": 0.4,
+    "Google Cloud": 0.4,
+    "Data Engineering": 0.4
+   },
+   "learn": "Build a small hands-on project using BigQuery and read its official documentation."
+  },
+  "Hadoop": {
+   "category": "data",
+   "aliases": [
+    "hdfs",
+    "mapreduce"
+   ],
+   "related": {
+    "Spark": 0.6,
+    "Data Engineering": 0.5
+   },
+   "learn": "Build a small hands-on project using Hadoop and read its official documentation."
+  },
+  "Firebase": {
+   "category": "cloud",
+   "aliases": [
+    "firestore",
+    "firebase auth",
+    "cloud firestore"
+   ],
+   "related": {
+    "Supabase": 0.4,
+    "MongoDB": 0.25
+   },
+   "learn": "Build a small hands-on project using Firebase and read its official documentation."
+  },
+  "Dart": {
+   "category": "language",
+   "aliases": [],
+   "related": {
+    "Flutter": 0.5,
+    "Java": 0.25,
+    "Kotlin": 0.3
+   },
+   "learn": "Build a small hands-on project using Dart and read its official documentation."
+  },
+  "MLOps": {
+   "category": "data",
+   "aliases": [
+    "ml ops",
+    "machine learning operations",
+    "model deployment",
+    "model serving",
+    "model monitoring"
+   ],
+   "related": {
+    "Machine Learning": 0.4,
+    "Docker": 0.3,
+    "CI/CD": 0.3
+   },
+   "learn": "Build a small hands-on project using MLOps and read its official documentation.",
+   "describe": "automated model training, versioning, deployment and monitoring of machine learning models in production"
+  },
+  "Computer Vision": {
+   "category": "data",
+   "aliases": [
+    "image recognition",
+    "object detection",
+    "opencv",
+    "image classification"
+   ],
+   "related": {
+    "Deep Learning": 0.6,
+    "Machine Learning": 0.5,
+    "PyTorch": 0.4
+   },
+   "learn": "Build a small hands-on project using Computer Vision and read its official documentation."
+  },
+  "scikit-learn": {
+   "category": "data",
+   "aliases": [
+    "sklearn",
+    "scikit learn"
+   ],
+   "related": {
+    "Machine Learning": 0.6,
+    "Pandas": 0.4,
+    "Statistics": 0.3
+   },
+   "learn": "Build a small hands-on project using scikit-learn and read its official documentation."
   }
  }
 }

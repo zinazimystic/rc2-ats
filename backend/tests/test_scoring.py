@@ -164,3 +164,24 @@ def test_llm_narrative_failure_falls_back_to_template(monkeypatch):
     res, s = run(JOB, cand)
     ex = explain(JOB, cand, res, s.components, s.total, Semantics(False), [], use_llm=True)
     assert ex.summary_method == "template" and "Scored" in ex.summary
+
+
+def test_tools_are_not_aliases_of_umbrella_skills():
+    """A candidate who lists only Selenium / Jenkins / dbt must not get full credit for Test Automation / CI/CD / Airflow."""
+    from app.services.parsing.normalizer import taxonomy
+
+    tax = taxonomy()
+    for tool, umbrella in [("Selenium", "Test Automation"), ("Jenkins", "CI/CD"), ("dbt", "Data Engineering"), ("Hadoop", "Spark"),
+                           ("JUnit", "Unit Testing"), ("Dart", "Flutter"), ("scikit-learn", "Machine Learning")]:
+        assert tax.canonical(tool) == tool != tax.canonical(umbrella)
+        assert tax.related(umbrella).get(tool, 0) >= 0.3 and tax.related(tool).get(umbrella, 0) >= 0.3
+    assert tax.canonical("Apache Airflow") == "Airflow" and tax.canonical("ETL pipelines") == "ETL"
+    for skill in ("MLOps", "Computer Vision", "Snowflake", "BigQuery", "Firebase", "Maven", "Cypress", "JMeter"):
+        assert tax.known(skill), skill
+
+
+def test_requirement_embedding_text_is_descriptive():
+    from app.services.matching import builders
+
+    assert "continuous integration" in builders.req_text("CI/CD").lower()
+    assert builders.req_text("Some Unknown Tool") == "Experience with Some Unknown Tool"

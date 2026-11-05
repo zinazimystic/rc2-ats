@@ -1,9 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { BriefcaseBusiness, MapPin, Plus, Search } from "lucide-react";
-import { api, qs } from "@/lib/api";
+import { api } from "@/lib/api";
+import { keepPreviousData } from "@tanstack/react-query";
+import { useDebounced } from "@/lib/hooks";
 import type { JobListItem } from "@/lib/types";
 import { fmtDate, fmtSalary, titleCase } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -17,11 +19,14 @@ import { cn } from "@/lib/utils";
 export default function JobsPage() {
   const [status, setStatus] = useState("");
   const [q, setQ] = useState("");
-  const query = useQuery({
-    queryKey: ["jobs", status, q],
-    queryFn: () => api<JobListItem[]>(`/jobs${qs({ status, q })}`),
-    placeholderData: (p) => p,
-  });
+  const dq = useDebounced(q, 150);
+  // One request for all jobs; filtering is instant and local.
+  const all = useQuery({ queryKey: ["jobs", "all"], queryFn: () => api<JobListItem[]>("/jobs"), staleTime: 45_000, placeholderData: keepPreviousData });
+  const data = useMemo(() => {
+    const n = dq.trim().toLowerCase();
+    return all.data?.filter((j) => (!status || j.status === status) && (!n || [j.title, j.department, j.location, ...j.required_skills].filter(Boolean).join(" ").toLowerCase().includes(n)));
+  }, [all.data, status, dq]);
+  const query = { data, isError: all.isError && !all.data, error: all.error, refetch: all.refetch };
   return (
     <>
       <PageHeader title="Jobs" description="Your postings and their applicant pipelines." actions={<Button asChild><Link href="/recruiter/jobs/new"><Plus /> New job</Link></Button>} />
@@ -37,7 +42,7 @@ export default function JobsPage() {
         </div>
       </div>
       {query.isError ? <ErrorState error={query.error} retry={() => query.refetch()} /> : !query.data ? (
-        <div className="grid gap-4 md:grid-cols-2">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-40 rounded-2xl" />)}</div>
+        <div className="grid gap-4 md:grid-cols-2" aria-busy="true" aria-label="Loading jobs">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-52 rounded-3xl" />)}</div>
       ) : query.data.length === 0 ? (
         <EmptyState icon={<BriefcaseBusiness className="size-8" />} title={q || status ? "No jobs match your filters" : "No jobs yet"} description="Post a job to start receiving evidence-ranked applications." action={<Button asChild><Link href="/recruiter/jobs/new">Create job</Link></Button>} />
       ) : (

@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, Textarea } from "@/components/ui/input";
 import { Banner, EmptyState, PageHeader } from "@/components/ui/misc";
+import { friendlyError } from "@/lib/errors";
 import { ScoreBar, SkillChips, StatusBadge, notifyError } from "@/components/app/common";
 
 export default function TalentSearch() {
@@ -20,7 +21,7 @@ export default function TalentSearch() {
   const r = m.data;
   return (
     <>
-      <PageHeader title="Talent search" description="Describe who you’re looking for in natural language — results are ranked by semantic similarity and skill coverage, with evidence." />
+      <PageHeader title="Talent search" description="Describe who you’re looking for in natural language — results are ranked by how closely they match your description and by skill coverage, with evidence." />
       <form onSubmit={(e) => { e.preventDefault(); if (query.trim().length >= 3) m.mutate(); }} className="mb-6 space-y-3">
         <Textarea aria-label="Search query" rows={3} placeholder="e.g. Backend engineer with Django and PostgreSQL experience who has shipped Dockerized services" value={query} onChange={(e) => setQuery(e.target.value)} />
         <div className="flex flex-wrap gap-2">
@@ -31,7 +32,7 @@ export default function TalentSearch() {
       {r && (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2 text-sm"><Sparkles className="size-4 text-primary" />Detected skills: {r.detected_skills.length ? r.detected_skills.map((s) => <Badge key={s}>{s}</Badge>) : <span className="text-muted-foreground">none</span>}<Badge variant="outline">{r.mode}</Badge></div>
-          {r.warning && <Banner tone="warning">{r.warning}</Banner>}
+          {r.warning && <Banner tone="warning">{friendlyError(r.warning, "Results may be less precise than usual this time.")}</Banner>}
           {r.results.length === 0 ? <EmptyState title="No matching candidates" description="Try broader wording or fewer constraints." /> : r.results.map((x) => (
             <Card key={x.candidate.id}><CardContent className="space-y-3 pt-4">
               <div className="flex flex-wrap items-start justify-between gap-3">

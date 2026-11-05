@@ -38,7 +38,11 @@ def job_text(job: Job) -> str:
 
 
 def req_text(skill: str) -> str:
-    return f"Experience with {skill}"
+    """Text embedded for a job requirement. A bare tool name ("CI/CD") embeds far from plain-worded experience ("automated
+    build and release pipelines"), so known skills are expanded with their description / aliases (similarity 0.1 -> 0.55)."""
+    from app.services.parsing.normalizer import taxonomy
+
+    return f"Experience with {taxonomy().describe(skill)}"
 
 
 def ensure_job_embeddings(db: Session, job: Job) -> bool:

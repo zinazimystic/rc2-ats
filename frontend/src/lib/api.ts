@@ -1,3 +1,5 @@
+import { friendlyError } from "./errors";
+
 export class ApiError extends Error {
   status: number;
   code: string;
@@ -72,11 +74,5 @@ export async function api<T>(path: string, opts: Opts = {}): Promise<T> {
 }
 
 export function errMsg(e: unknown): string {
-  if (e instanceof ApiError) {
-    if (e.code === "validation_error" && e.errors?.length) {
-      return e.errors.map((x) => `${(x.loc ?? []).filter((p) => p !== "body").join(".")}: ${x.msg}`).join("; ");
-    }
-    return e.message;
-  }
-  return e instanceof Error ? e.message : "Something went wrong";
+  return friendlyError(e);
 }

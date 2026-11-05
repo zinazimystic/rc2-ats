@@ -10,6 +10,7 @@ import { AuthFrame } from "@/components/app/auth-frame";
 import { api, errMsg } from "@/lib/api";
 import type { LoginIn, UserOut } from "@/lib/types";
 import { homeFor } from "@/lib/auth";
+import { prefetchRoute } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
 import { Banner } from "@/components/ui/misc";
@@ -26,6 +27,7 @@ function LoginForm() {
     onSuccess: (u) => {
       qc.setQueryData(["me"], u);
       const safe = next && next.startsWith(`/${u.role}`) ? next : homeFor(u.role);
+      prefetchRoute(qc, safe); // warm the first screen while the route loads
       router.replace(safe);
     },
   });

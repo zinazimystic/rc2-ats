@@ -5,7 +5,7 @@ import logging
 import uuid
 from typing import Callable
 
-from sqlalchemy import select
+from sqlalchemy import exists, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.errors import NotFound
@@ -92,27 +92,20 @@ def get_owned_note(db: Session, recruiter: User, note_id: uuid.UUID) -> Recruite
 
 # ----------------------------------------------------------------------------- resumes
 def recruiter_can_see_candidate(db: Session, recruiter: User, candidate_id: uuid.UUID) -> bool:
-    """A recruiter may see a candidate who applied to one of their jobs, or who opted in to the talent pool."""
-    applied = db.scalar(
-        select(Application.id)
-        .join(Job, Job.id == Application.job_id)
-        .where(Application.candidate_id == candidate_id, Job.recruiter_id == recruiter.id)
-        .limit(1)
-    )
-    if applied is not None:
-        return True
-    opted = db.scalar(
-        select(CandidateProfile.id).where(CandidateProfile.user_id == candidate_id, CandidateProfile.talent_pool_opt_in.is_(True))
-    )
-    return opted is not None
+    """A recruiter may see a candidate who applied to one of their jobs, or who opted in to the talent pool (one query)."""
+    applied = exists().where(Application.candidate_id == candidate_id, Application.job_id == Job.id, Job.recruiter_id == recruiter.id)
+    opted = exists().where(CandidateProfile.user_id == candidate_id, CandidateProfile.talent_pool_opt_in.is_(True))
+    return bool(db.scalar(select(or_(applied, opted))))
 
 
-def get_resume_for_user(db: Session, user: User, resume_id: uuid.UUID) -> Resume:
-    resume = db.get(Resume, resume_id)
+def get_resume_for_user(db: Session, user: User, resume_id: uuid.UUID, *options) -> Resume:
+    """Load a resume (with optional loader options) in ONE query, then apply the access rules.
+    Candidates never see their soft-deleted resumes; recruiters keep access to what applicants submitted."""
+    resume = db.scalars(select(Resume).where(Resume.id == resume_id).options(*options)).unique().first()
     if resume is None:
         raise NotFound("Resume not found")
     if user.role == "candidate":
-        if resume.candidate_id != user.id:
+        if resume.candidate_id != user.id or resume.deleted_at is not None:
             raise NotFound("Resume not found")
     elif not recruiter_can_see_candidate(db, user, resume.candidate_id):
         raise NotFound("Resume not found")

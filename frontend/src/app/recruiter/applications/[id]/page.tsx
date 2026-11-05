@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { ArrowLeft, Check, CircleX, RotateCcw } from "lucide-react";
 import { api, errMsg } from "@/lib/api";
 import type { ApplicationDetailOut, ApplicationStatus, Evidence } from "@/lib/types";
@@ -15,6 +15,7 @@ import { Field, Textarea } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Banner, ErrorState, Skeleton } from "@/components/ui/misc";
 import { ProcessingBadge, StatusBadge } from "@/components/app/common";
+import { ContactBadges } from "@/components/app/contact";
 import { AssessmentView } from "@/components/app/application/assessment-view";
 import { ResumeView } from "@/components/app/application/resume-view";
 import { QuestionsTab } from "@/components/app/application/questions-tab";
@@ -71,7 +72,12 @@ export default function ApplicationPage() {
   }, [a]);
 
   if (q.isError) return <ErrorState error={q.error} retry={() => q.refetch()} />;
-  if (!a) return <Skeleton className="h-96" />;
+  if (!a) return (
+    <div aria-busy="true" aria-label="Loading application">
+      <Skeleton className="mb-3 h-8 w-32" /><Skeleton className="mb-2 h-8 w-72" /><Skeleton className="mb-6 h-4 w-96" />
+      <Skeleton className="mb-4 h-10 w-96 rounded-full" /><div className="grid gap-4 lg:grid-cols-3"><Skeleton className="h-64 rounded-3xl" /><Skeleton className="h-64 rounded-3xl lg:col-span-2" /></div>
+    </div>
+  );
 
   const jump = (key: string) => { setActive(key); setTab("resume"); };
   const t = a.allowed_transitions;
@@ -90,12 +96,13 @@ export default function ApplicationPage() {
         <div>
           <h1 className="flex flex-wrap items-center gap-3 text-2xl font-semibold tracking-tight">{a.candidate.full_name}<StatusBadge status={a.status} /><ProcessingBadge state={a.processing_state} error={a.processing_error} />{a.is_duplicate && <Badge variant="warning">Possible duplicate</Badge>}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{[a.candidate.headline, a.candidate.email, a.candidate.location].filter(Boolean).join(" · ")} · Applied {fmtDate(a.applied_at)}</p>
+          <div className="mt-2"><ContactBadges checks={a.contact_checks} /></div>
           {a.cover_note && <p className="mt-2 max-w-2xl rounded-2xl border bg-card p-3 text-sm italic shadow-soft">“{a.cover_note}”</p>}
         </div>
         <div className="flex flex-wrap gap-2">{t.map(btn)}</div>
       </div>
       {a.status === "withdrawn" && <Banner tone="warning" className="mb-4">The candidate withdrew this application.</Banner>}
-      {a.processing_state !== "done" && a.processing_state !== "failed" && <Banner tone="info" className="mb-4">AI analysis in progress — this page refreshes automatically.</Banner>}
+      {a.processing_state !== "done" && a.processing_state !== "failed" && <Banner tone="info" className="mb-4">Analysis in progress. This page refreshes automatically.</Banner>}
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           <TabsTrigger value="assessment">Assessment</TabsTrigger>

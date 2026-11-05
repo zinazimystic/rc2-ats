@@ -72,6 +72,17 @@ class Taxonomy:
         d = self.skills.get(self.canonical(name))
         return dict(d.get("related", {})) if d else {}
 
+    def describe(self, name: str) -> str:
+        """Natural-language phrasing of a skill for embedding: a curated description, else the name plus a few aliases."""
+        canon = self.canonical(name)
+        d = self.skills.get(canon)
+        if not d:
+            return name
+        if d.get("describe"):
+            return d["describe"]
+        aliases = [a for a in d.get("aliases", []) if len(a) > 3][:5]
+        return f"{canon} ({', '.join(aliases)})" if aliases else canon
+
     def learn_hint(self, name: str) -> str:
         d = self.skills.get(self.canonical(name))
         return d["learn"] if d else f"Build a small hands-on project using {name} and study its documentation."

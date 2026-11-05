@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "@/lib/toast";
 import { Calendar, FileText, Send } from "lucide-react";
 import { api } from "@/lib/api";
 import type { CandidateApplicationOut } from "@/lib/types";
@@ -11,25 +11,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EmptyState, ErrorState, PageHeader, Skeleton } from "@/components/ui/misc";
-import { ProcessingBadge, StatusBadge, notifyError } from "@/components/app/common";
+import { ProcessingBadge, StatusBadge } from "@/components/app/common";
+import { qk, useMyApplications } from "@/lib/queries";
 
 export default function MyApplications() {
   const qc = useQueryClient();
   const [target, setTarget] = useState<CandidateApplicationOut | null>(null);
-  const q = useQuery({
-    queryKey: ["my-applications"],
-    queryFn: () => api<CandidateApplicationOut[]>("/applications/me"),
-    refetchInterval: (query) => (query.state.data?.some((a) => a.processing_state === "queued" || a.processing_state === "processing") ? 2000 : 15_000),
-  });
+  const q = useMyApplications();
   const withdraw = useMutation({
     mutationFn: (id: string) => api<CandidateApplicationOut>(`/applications/${id}/withdraw`, { method: "POST" }),
-    onSuccess: () => { toast.success("Application withdrawn"); qc.invalidateQueries({ queryKey: ["my-applications"] }); qc.invalidateQueries({ queryKey: ["jobs"] }); setTarget(null); },
-    onError: notifyError,
+    onSuccess: () => { toast.success("Application withdrawn"); qc.invalidateQueries({ queryKey: qk.applications }); qc.invalidateQueries({ queryKey: qk.dashboard }); qc.invalidateQueries({ queryKey: ["jobs"] }); setTarget(null); },
+    onError: (e) => { setTarget(null); toast.error(e); },
   });
   return (
     <>
       <PageHeader title="My applications" description="Track where each application stands." />
-      {q.isError ? <ErrorState error={q.error} retry={() => q.refetch()} /> : !q.data ? <Skeleton className="h-48" /> : q.data.length === 0 ? (
+      {q.isError && !q.data ? <ErrorState error={q.error} retry={() => q.refetch()} /> : !q.data ? <div className="space-y-4" aria-busy="true" aria-label="Loading applications">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-48 rounded-3xl" />)}</div> : q.data.length === 0 ? (
         <EmptyState icon={<Send className="size-8" />} title="No applications yet" description="Browse open roles and apply with your resume." action={<Button asChild><Link href="/candidate">Browse jobs</Link></Button>} />
       ) : (
         <div className="space-y-4">

@@ -5,7 +5,7 @@ import uuid
 from fastapi import APIRouter, Response
 from sqlalchemy import desc, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload, selectinload
 
 from app.core.deps import DB, Candidate, Recruiter
 from app.core.errors import Conflict, NotFound, Unprocessable
@@ -56,13 +56,22 @@ def apply(body: ApplyIn, db: DB, user: Candidate):
         raise NotFound("Job not found")
     if job.status != "open":
         raise Conflict("This job is no longer accepting applications", code="job_closed")
-    resume = db.scalar(
-        select(Resume)
-        .where(Resume.candidate_id == user.id, Resume.parse_status != "failed")
-        .order_by(Resume.is_current.desc(), Resume.created_at.desc())
-        .limit(1)
-    )
+    if body.resume_id is not None:  # the candidate picked a specific resume in the apply dialog
+        resume = db.scalar(select(Resume).where(Resume.id == body.resume_id, Resume.candidate_id == user.id, Resume.deleted_at.is_(None)))
+        if resume is None or resume.parse_status != "parsed":
+            raise Unprocessable("That resume can't be used yet. Pick another resume, or wait until it has finished being read.", code="resume_invalid")
+    else:
+        resume = db.scalar(
+            select(Resume)
+            .where(Resume.candidate_id == user.id, Resume.parse_status != "failed", Resume.deleted_at.is_(None))
+            .order_by(Resume.is_current.desc(), Resume.created_at.desc())
+            .limit(1)
+        )
     if resume is None:
+        failed = db.scalar(select(Resume).where(Resume.candidate_id == user.id, Resume.deleted_at.is_(None)).order_by(Resume.created_at.desc()).limit(1))
+        if failed is not None:  # the candidate did upload, but nothing usable: say why instead of "upload a resume"
+            reason = failed.parse_error or "it could not be read"
+            raise Unprocessable(f"Your resume could not be processed ({reason.rstrip('.')}). Please upload a readable PDF or DOCX before applying.", code="resume_unreadable")
         raise Unprocessable("Upload a resume before applying", code="no_resume")
     existing = db.scalar(select(Application).where(Application.job_id == job.id, Application.candidate_id == user.id))
     if existing is not None and existing.status != "withdrawn":
@@ -102,10 +111,11 @@ def my_applications(db: DB, user: Candidate):
     apps = db.scalars(
         select(Application)
         .where(Application.candidate_id == user.id)
-        .options(selectinload(Application.job))
+        .options(joinedload(Application.job), joinedload(Application.resume).load_only(Resume.id, Resume.filename))
         .order_by(desc(Application.created_at))
-    ).all()
-    return app_service.to_candidate_applications(db, list(apps))
+    ).unique().all()
+    names = {a.resume_id: a.resume.filename for a in apps if a.resume is not None}
+    return app_service.to_candidate_applications(db, list(apps), names)
 
 
 @router.post("/{application_id}/withdraw", response_model=CandidateApplicationOut)

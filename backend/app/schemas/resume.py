@@ -3,8 +3,11 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
+from app.schemas.contact import ContactChecks, ProfileCompletion
 from app.schemas.common import (
     ORM,
     ExtractionMethod,
@@ -86,6 +89,15 @@ class CandidateSkillOut(ORM):
     removed: bool = False
 
 
+class ResumeNotice(BaseModel):
+    """A friendly, server-generated message about a resume (never exposes technical failure reasons)."""
+
+    code: str
+    level: Literal["info", "warning", "error"] = "info"
+    message: str
+    action: Literal["reparse", "edit"] | None = None
+
+
 class ResumeOut(ORM):
     id: UUID
     candidate_id: UUID
@@ -102,11 +114,29 @@ class ResumeOut(ORM):
     parsed: ParsedResume | None = None
     skills: list[CandidateSkillOut] = []
     created_at: datetime
+    application_count: int = 0  # applications (any status) that use this resume
+    in_use: bool = False  # used by an application that is still active (cannot be deleted)
+    notices: list[ResumeNotice] = []
 
 
 class ResumeDetailOut(ResumeOut):
     # full extracted text; evidence start/end offsets index into this string
     text: str | None = None
+
+
+class ResumeBulkDeleteIn(BaseModel):
+    ids: list[UUID] = Field(min_length=1, max_length=50)
+
+
+class BlockedResume(BaseModel):
+    id: UUID
+    filename: str
+    reason: str
+
+
+class ResumeBulkDeleteOut(BaseModel):
+    deleted: list[UUID] = []
+    blocked: list[BlockedResume] = []
 
 
 class SkillAddIn(BaseModel):
@@ -139,6 +169,7 @@ class ProfileIn(BaseModel):
     interests: list[str] | None = Field(default=None, max_length=20)
     talent_pool_opt_in: bool | None = None
     retention_until: datetime | None = None
+    whatsapp_enabled: bool | None = None
 
 
 class ProfileOut(ORM):
@@ -152,3 +183,6 @@ class ProfileOut(ORM):
     interests: list[str] = []
     talent_pool_opt_in: bool = False
     retention_until: datetime | None = None
+    whatsapp_enabled: bool = False
+    contact_checks: ContactChecks | None = None
+    completion: ProfileCompletion | None = None

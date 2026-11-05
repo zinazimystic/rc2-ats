@@ -6,11 +6,10 @@ import { Banner } from "@/components/ui/misc";
 import type { ApplicationStatus, EvidenceStatus, Flag, ProcessingState, Verification } from "@/lib/types";
 import { STATUS_LABEL, fmtScore, scoreTone } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
-import { errMsg } from "@/lib/api";
+import { toast } from "@/lib/toast";
 
 export function notifyError(e: unknown) {
-  toast.error(errMsg(e));
+  toast.error(e);
 }
 
 const STATUS_VARIANT: Record<ApplicationStatus, "default" | "secondary" | "success" | "destructive" | "warning" | "muted"> = {

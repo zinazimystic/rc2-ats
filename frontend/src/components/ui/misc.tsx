@@ -3,6 +3,7 @@ import { AlertTriangle, Inbox, Loader2, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
 import { errMsg } from "@/lib/api";
+import { Notice } from "./notice";
 
 export function Skeleton({ className, ...p }: React.ComponentProps<"div">) {
   return <div className={cn("animate-pulse rounded-md bg-muted", className)} {...p} />;
@@ -62,6 +63,7 @@ export function ErrorState({ error, retry }: { error: unknown; retry?: () => voi
     </div>
   );
 }
+/** Legacy name: every inline message now renders through the shared Notice. */
 export function Banner({
   tone = "info",
   children,
@@ -71,16 +73,10 @@ export function Banner({
   children: React.ReactNode;
   className?: string;
 }) {
-  const t = {
-    info: "border-primary/30 bg-primary/8",
-    warning: "border-warning/50 bg-warning/12",
-    danger: "border-destructive/40 bg-destructive/8",
-    success: "border-success/40 bg-success/10",
-  }[tone];
   return (
-    <div role={tone === "danger" ? "alert" : "status"} className={cn("rounded-lg border px-3 py-2 text-sm", t, className)}>
+    <Notice tone={tone === "danger" ? "error" : tone} className={className}>
       {children}
-    </div>
+    </Notice>
   );
 }
 export function PageHeader({

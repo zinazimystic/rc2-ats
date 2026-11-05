@@ -1,0 +1,53 @@
+
+=== Average AI score per job by ground-truth level (own-track candidates) ===
+job            strong  stealth   medium     weak  other-trk   ordering
+backend_py       94.2     88.7     74.0     39.5       28.1   OK
+frontend         87.8     82.6     59.2     36.9       18.1   OK
+fullstack        85.0     84.2     65.4     34.1       22.9   OK
+devops           86.1     77.6     61.3     15.7       11.6   OK
+data_sci         87.4     89.8     69.8     30.0       16.8   VIOLATION
+mobile           89.8     93.7     59.1     42.9       25.7   VIOLATION
+qa               84.8     84.3     78.6     45.9       29.6   OK
+java             83.2     75.3     57.3     32.0       27.8   OK
+data_eng         94.0     92.2     75.1     39.4       32.2   OK
+ml_eng           84.8     74.9     59.7     26.5       29.4   VIOLATION
+ALL              87.7     84.3     66.0     34.3       24.7   7/10 jobs ordered strong>=stealth>=medium>=weak>=other
+
+Score distribution: min=0.0 p25=18.2 median=34.1 p75=64.7 max=94.2  (n=109)
+Processing states: {'done': 109}
+
+=== Stealth candidates: plain-worded core skills must not be 'missing' ===
+  backend_py Ayesha Siddiqui  PostgreSQL         status=evidenced credit=1.00 match=exact     via=PostgreSQL
+  backend_py Ayesha Siddiqui  Docker             status=evidenced credit=1.00 match=exact     via=Docker
+  frontend   Sana Malik       TypeScript         status=partial   credit=0.70 match=related   via=JavaScript
+  devops     Kavya Reddy      CI/CD              status=missing_evidence credit=0.00 match=none      via=None
+  data_sci   Pooja Patel      Machine Learning   status=evidenced credit=1.00 match=exact     via=Machine Learning
+  qa         Sophia Martinez  Test Automation    status=evidenced credit=1.00 match=exact     via=Test Automation
+  java       Mia Young        Microservices      status=missing_evidence credit=0.00 match=none      via=None
+  data_eng   Hiro Sato        ETL                status=evidenced credit=1.00 match=alias     via=Data Engineering
+  ml_eng     Layla Haddad     MLOps              status=missing_evidence credit=0.00 match=none      via=None
+  -> 6/9 credited
+
+=== Edge documents (own job) ===
+  duplicate:backend_py   Hamza Qureshi      score= 94.2 level=strong flags=[] matched=['Python', 'Django', 'PostgreSQL', 'Docker', 'REST API', 'AWS'] missing=[]
+  injection:qa           Ivan Petrov        score= 47.9 level=weak   flags=['prompt_injection'] matched=['Selenium', 'Cypress', 'Test Automation'] missing=['Python', 'Jenkins']
+  docx:java              Anna Kowalski      score= 87.4 level=strong flags=[] matched=['Java', 'Spring Boot', 'MySQL', 'Microservices', 'Maven', 'Kafka', 'Docker'] missing=[]
+  hidden:data_eng        Elif Yilmaz        score= 51.1 level=weak   flags=['hidden_text'] matched=['SQL', 'Apache Spark', 'Airflow', 'ETL'] missing=['Python']
+  nonresume:ml_eng       Chidi Okafor       score=  0.0 level=edge   flags=['missing_dates', 'missing_education', 'no_projects'] matched=[] missing=['Python', 'PyTorch', 'Machine Learning', 'MLOps', 'Docker']
+
+Evidence: 190 quotes checked, 0 not verbatim in resume text; claims with no evidence: 0/264 requirement rows
+
+Parse time (upload->parsed, concurrent x6): mean=65.4s max=118.2s n=49
+Timing: {'onboard_secs': 682.9, 'assess_wait_secs': 408.0, 'total_secs': 1172.4}
+Extraction accuracy: {'backend_py': (1.0, 1.0), 'devops': (1.0, 1.0), 'data_sci': (1.0, 0.8)}
+Upload outcomes:
+  duplicate  upload=201 parse=parsed err=None flags=[]
+  scanned    upload=201 parse=failed err=We could not read any text from this file. It may be a scanned image or empty - please upload a text-based PDF or DOCX. flags=[]
+  empty      upload=201 parse=failed err=We could not read any text from this file. It may be a scanned image or empty - please upload a text-based PDF or DOCX. flags=[]
+  corrupt    upload=201 parse=failed err=This PDF is corrupt or unreadable. flags=[]
+  encrypted  upload=201 parse=failed err=This PDF is password-protected. Remove the password and upload it again. flags=[]
+  docx       upload=201 parse=parsed err=None flags=[]
+  injection  upload=201 parse=parsed err=None flags=['prompt_injection']
+  hidden     upload=201 parse=parsed err=None flags=['hidden_text']
+  nonresume  upload=201 parse=parsed err=None flags=[]
+  wrongtype  upload=422 parse=None err=This file is not a valid PDF flags=None

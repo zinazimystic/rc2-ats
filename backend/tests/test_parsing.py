@@ -221,3 +221,15 @@ def test_rules_extractor_handles_missing_sections():
     text = "Just some free text about Python and Django work done for a long time at various companies."
     parsed, skills = rules_extractor.extract(text, sections.detect_sections(text))
     assert parsed.experience == [] and parsed.projects == [] and {s.name for s in skills} == {"Python", "Django"}
+
+
+def test_not_a_resume_flag():
+    from app.schemas.resume import ParsedResume
+    from app.services.parsing import integrity
+
+    empty = ParsedResume()
+    recipe = "Preheat the oven to 180 degrees. Mix flour, sugar and eggs in a large bowl. " * 6
+    flags = integrity.not_a_resume_flag(empty, [], recipe)
+    assert [f.type for f in flags] == ["not_a_resume"]
+    assert integrity.not_a_resume_flag(empty, ["Python"], recipe) == []  # skills found -> a real resume
+    assert integrity.not_a_resume_flag(empty, [], "short") == []  # too little text: low_text covers it

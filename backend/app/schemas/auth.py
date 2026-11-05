@@ -55,6 +55,11 @@ class UserOut(ORM):
     full_name: str
     role: Role
     created_at: datetime
+    email_verified: bool = False  # read from User.email_verified (property)
+
+
+class EmailCodeIn(BaseModel):
+    code: str = Field(min_length=4, max_length=12)
 
 
 class HealthComponent(BaseModel):

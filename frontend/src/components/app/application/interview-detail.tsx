@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { CalendarClock, Clock, Globe2, MapPin, MessageSquareText, UserRound } from "lucide-react";
 import { api, errMsg } from "@/lib/api";
 import type { InterviewOut } from "@/lib/types";

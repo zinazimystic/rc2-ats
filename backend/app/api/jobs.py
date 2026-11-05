@@ -4,19 +4,20 @@ import uuid
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import or_, select
-from sqlalchemy.orm import selectinload
+from sqlalchemy import func, or_, select
+from sqlalchemy.orm import joinedload, selectinload
 
-from app.core.deps import DB, CurrentUser, Recruiter
+from app.core.deps import DB, Candidate, CurrentUser, Recruiter
 from app.core.errors import Conflict, NotFound, ServiceUnavailable, Unprocessable
 from app.models import Application, Job, Notification, Resume, User
 from app.schemas.application import ApplicationRowOut, CompareOut, JobApplicantsOut
 from app.schemas.common import Msg
 from app.schemas.job import JobExtractIn, JobExtractOut, JobIn, JobListItem, JobOut, JobUpdate
-from app.schemas.search import TalentPoolItem
+from app.schemas.search import MyMatchOut, TalentPoolItem
 from app.services import applications as app_service
 from app.services import jobs as job_service
 from app.services import jobs_ai, resumes, search
+from app.services import my_match as my_match_service
 from app.services.access import get_owned_job, safe_call
 from app.services.ai import llm
 from app.services.audit import log_event
@@ -32,22 +33,28 @@ def list_jobs(
     status: Literal["open", "closed"] | None = None,
     q: Annotated[str | None, Query(max_length=100)] = None,
 ):
-    stmt = select(Job).options(selectinload(Job.requirements)).order_by(Job.created_at.desc())
+    """Round trips: jobs+requirements (+has_applied flag for candidates) in ONE query; recruiters add one for the counts."""
+    stmt = select(Job).options(joinedload(Job.requirements)).order_by(Job.created_at.desc())
     if user.role == "recruiter":
         stmt = stmt.where(Job.recruiter_id == user.id)
-        if status:
-            stmt = stmt.where(Job.status == status)
     else:
         applied = select(Application.job_id).where(Application.candidate_id == user.id, Application.status != "withdrawn")
-        stmt = stmt.where(or_(Job.status == "open", Job.id.in_(applied)))
-        if status:
-            stmt = stmt.where(Job.status == status)
+        stmt = stmt.where(or_(Job.status == "open", Job.id.in_(applied))).add_columns(Job.id.in_(applied).label("applied"))
+    if status:
+        stmt = stmt.where(Job.status == status)
     if q and q.strip():
         like = f"%{q.strip().lower()}%"
-        from sqlalchemy import func
-
         stmt = stmt.where(or_(func.lower(Job.title).like(like), func.lower(Job.department).like(like), func.lower(Job.location).like(like)))
-    return job_service.to_list_items(db, list(db.scalars(stmt).all()), user)
+    if user.role == "recruiter":
+        return job_service.to_list_items(db, list(db.scalars(stmt).unique().all()), user)
+    rows = db.execute(stmt).unique().all()
+    return job_service.to_list_items(db, [r[0] for r in rows], user, applied={r[0].id for r in rows if r[1]})
+
+
+@router.get("/{job_id}/my-match", response_model=MyMatchOut)
+def my_match(job_id: uuid.UUID, db: DB, user: Candidate, resume_id: uuid.UUID | None = None):
+    """The candidate's own fit estimate for a job (what to work on). Never includes recruiter-side data."""
+    return my_match_service.my_match(db, user, job_id, resume_id)
 
 
 @router.post("", response_model=JobOut, status_code=201)

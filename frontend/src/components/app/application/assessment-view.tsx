@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Lightbulb, Quote, Scale, ShieldCheck, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
 import { api, errMsg } from "@/lib/api";
 import type { ApplicationDetailOut, AssessmentOut, FairnessOut, OverrideIn, RequirementResult } from "@/lib/types";
@@ -109,7 +109,7 @@ export function AssessmentView({ app, onJump }: { app: ApplicationDetailOut; onJ
   if (!a)
     return (
       <Banner tone={app.processing_state === "failed" ? "danger" : "info"}>
-        {app.processing_state === "failed" ? <>AI assessment failed{app.processing_error ? `: ${app.processing_error}` : ""}. You can retry, or review the resume manually and move the application forward.</> : "The AI assessment is being prepared — this page updates automatically."}
+        {app.processing_state === "failed" ? <>We couldn’t finish scoring this application. You can retry, or review the resume yourself and move the application forward.</> : "The assessment is being prepared. This page updates automatically."}
         {app.processing_state === "failed" && <Button size="sm" variant="outline" className="ml-3" loading={reprocess.isPending} onClick={() => reprocess.mutate()}>Retry</Button>}
       </Banner>
     );
@@ -117,8 +117,7 @@ export function AssessmentView({ app, onJump }: { app: ApplicationDetailOut; onJ
   return (
     <div className="space-y-4">
       {a.stale && <Banner tone="warning">This assessment is based on an older version of the job. Re-scoring is in progress.</Banner>}
-      {!a.semantic_available && <Banner tone="warning">Semantic matching (embeddings) was unavailable — only keyword and alias matches were used, so related skills may be under-credited.</Banner>}
-      {a.summary_method === "rules" || a.summary_method === "template" ? <Banner tone="info">The narrative summary was generated from templates (LLM unavailable). Scores are unaffected — they are always computed deterministically.</Banner> : null}
+      {!a.semantic_available && <Banner tone="info">Related skills may be under-credited in this score. Only exact and close wording matches were used.</Banner>}
       <FlagList flags={a.flags} />
       <div className="grid gap-4 lg:grid-cols-3">
         <Card>

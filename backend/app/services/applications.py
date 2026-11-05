@@ -117,12 +117,23 @@ def to_row(a: Application) -> ApplicationRowOut:
     )
 
 
+def _contact_checks(a: Application, resume: Resume | None):
+    """Offline checks of the candidate's contact details (profile phone first, else the phone parsed from the resume)."""
+    from app.services import contact_verify
+    from app.services.profile import resume_phone
+
+    prof = a.candidate.profile if a.candidate is not None else None
+    phone = (prof.phone if prof else None) or resume_phone(resume)
+    return contact_verify.contact_checks(a.candidate, phone, bool(prof.whatsapp_enabled) if prof else None)
+
+
 def to_detail(db: Session, a: Application) -> ApplicationDetailOut:
     resume = None
+    r_obj = None
     if a.resume_id:
-        r = db.get(Resume, a.resume_id)
-        if r is not None:
-            resume = to_resume_detail(r)
+        r_obj = db.get(Resume, a.resume_id)
+        if r_obj is not None:
+            resume = to_resume_detail(r_obj)
     ivs = iv_service.load_interviews(db, Interview.application_id == a.id)
     asm = a.assessment
     return ApplicationDetailOut(
@@ -139,6 +150,7 @@ def to_detail(db: Session, a: Application) -> ApplicationDetailOut:
         allowed_transitions=workflow.allowed_transitions(a, "recruiter"),
         notes_count=len(a.notes),
         interviews=[iv_service.to_interview_out(i, a) for i in ivs],
+        contact_checks=_contact_checks(a, r_obj),
         applied_at=a.created_at,
         updated_at=a.updated_at,
     )
@@ -204,7 +216,8 @@ def _timelines(db: Session, apps: Iterable[Application]) -> dict[uuid.UUID, list
     return out
 
 
-def to_candidate_applications(db: Session, apps: list[Application]) -> list[CandidateApplicationOut]:
+def to_candidate_applications(db: Session, apps: list[Application], resume_names: dict | None = None) -> list[CandidateApplicationOut]:
+    """resume_names (id -> filename) lets callers that already hold the resumes skip one query."""
     if not apps:
         return []
     ids = [a.id for a in apps]
@@ -216,7 +229,10 @@ def to_candidate_applications(db: Session, apps: list[Application]) -> list[Cand
     for i in ivs:
         iv_by_app.setdefault(i.application_id, []).append(i)
     resume_ids = [a.resume_id for a in apps if a.resume_id]
-    names = dict(db.execute(select(Resume.id, Resume.filename).where(Resume.id.in_(resume_ids))).all()) if resume_ids else {}
+    names = dict(resume_names or {})
+    need = [r for r in resume_ids if r not in names]
+    if need:
+        names.update(dict(db.execute(select(Resume.id, Resume.filename).where(Resume.id.in_(need))).all()))
     result = []
     for a in apps:
         result.append(

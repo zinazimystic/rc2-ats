@@ -92,10 +92,11 @@ def to_job_out(db: Session, job: Job, viewer: User) -> JobOut:
     return out
 
 
-def to_list_items(db: Session, jobs: list[Job], viewer: User) -> list[JobListItem]:
+def to_list_items(db: Session, jobs: list[Job], viewer: User, applied: set[uuid.UUID] | None = None) -> list[JobListItem]:
     ids = [j.id for j in jobs]
     counts = job_counts(db, ids) if viewer.role == "recruiter" else {}
-    applied = applied_job_ids(db, viewer, ids) if viewer.role == "candidate" else set()
+    if applied is None:
+        applied = applied_job_ids(db, viewer, ids) if viewer.role == "candidate" else set()
     items = []
     for j in jobs:
         c = counts.get(j.id, {"applicants": 0, "shortlisted": 0, "pending": 0})

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FlagList, VerificationBadge } from "@/components/app/common";
 import { Banner } from "@/components/ui/misc";
+import { friendlyError } from "@/lib/errors";
 
 export interface Range { start: number; end: number; key: string }
 
@@ -74,7 +75,7 @@ export function ResumeView({ resume, evidence, activeKey }: { resume: ResumeDeta
           <p className="text-sm text-muted-foreground">{resume.filename} · {resume.page_count ?? "?"} page(s) · <mark className="ev">highlighted</mark> = evidence used in scoring</p>
           <Button variant="outline" size="sm" asChild><a href={`/api/resumes/${resume.id}/file`} target="_blank" rel="noreferrer"><ExternalLink /> Original file</a></Button>
         </div>
-        {resume.warnings.map((w, i) => <Banner key={i} tone="warning">{w}</Banner>)}
+        {resume.warnings.map((w, i) => <Banner key={i} tone="warning">{friendlyError(w, "Part of this file may not have been read perfectly.")}</Banner>)}
         <FlagList flags={resume.integrity_flags} />
         {text ? <HighlightedText text={text} ranges={ranges} active={activeKey} /> : <Banner tone="warning">No text could be extracted from this file (it may be a scanned image).</Banner>}
       </div>
@@ -82,7 +83,7 @@ export function ResumeView({ resume, evidence, activeKey }: { resume: ResumeDeta
         <Card>
           <CardHeader><CardTitle>Parsed profile</CardTitle></CardHeader>
           <CardContent className="space-y-3 text-sm">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">Extracted by {resume.extraction_method === "llm" ? "LLM" : "rule-based parser"}{p?.total_years_claimed != null && ` · ${p.total_years_claimed} yrs claimed`}</div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">Read from the uploaded file{p?.total_years_claimed != null && ` · ${p.total_years_claimed} yrs claimed`}</div>
             {p?.summary && <p>{p.summary}</p>}
             {p?.experience.map((x, i) => (
               <div key={i} className="rounded-md border p-2">

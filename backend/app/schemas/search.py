@@ -56,3 +56,48 @@ class TalentPoolItem(BaseModel):
     missing_skills: list[str] = []
     previously_applied_to: str | None = None
     invited: bool = False
+
+
+# ----------------------------------------------------------------------------- candidate "what do I need to work on"
+class MyMatchResume(BaseModel):
+    id: UUID
+    filename: str
+
+
+class MyMatchComponents(BaseModel):
+    skills: float | None = None
+    experience: float | None = None
+    projects: float | None = None
+    qualifications: float | None = None
+
+
+class MyMatchRequirement(BaseModel):
+    skill: str
+    kind: str  # required | preferred
+    importance: int
+    status: str  # evidenced | partial | missing_evidence | confirmed_absent
+    matched_as: str | None = None
+    evidence: str | None = None
+
+
+class MyMatchImprovement(BaseModel):
+    skill: str
+    suggestion: str
+
+
+class MyMatchOut(BaseModel):
+    """The candidate's OWN fit estimate. Never contains recruiter notes, rankings, other candidates or the recruiter's assessment."""
+
+    job: JobBrief
+    resume: MyMatchResume | None = None
+    needs_resume: bool = False
+    score: float = 0.0
+    band: str = "low"  # strong | good | partial | low
+    components: MyMatchComponents = MyMatchComponents()
+    requirements: list[MyMatchRequirement] = []
+    strengths: list[str] = []
+    gaps: list[str] = []
+    improvements: list[MyMatchImprovement] = []
+    tips: list[str] = []
+    already_applied: bool = False
+    semantic_available: bool = False

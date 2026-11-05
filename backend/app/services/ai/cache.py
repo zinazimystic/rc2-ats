@@ -41,12 +41,16 @@ def get(key: str) -> Any | None:
     return None
 
 
-def put(key: str, kind: str, value: Any) -> None:
+def put(key: str, kind: str, value: Any, overwrite: bool = False) -> None:
     _remember(key, value)
     try:
         with SessionLocal() as db:
-            if db.get(AICache, key) is None:
+            row = db.get(AICache, key)
+            if row is None:
                 db.add(AICache(key=key, kind=kind, value=value))
+                db.commit()
+            elif overwrite:
+                row.value = value
                 db.commit()
     except Exception as exc:
         log.debug("cache write failed: %s", exc)

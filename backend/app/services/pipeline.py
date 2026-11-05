@@ -24,6 +24,8 @@ from app.services.parsing.sections import ChunkDraft, chunk_text, detect_section
 
 log = logging.getLogger("app.pipeline")
 OPEN_STATUSES = ("submitted", "parsed", "ai_assessed", "recruiter_review", "shortlisted", "interview")
+# resume ids whose next extraction must bypass the ai_cache (candidate-triggered re-parse); consumed by _process_resume
+REFRESH_EXTRACTION: set[UUID] = set()
 GENERIC_PARSE_ERROR = "We could not process this resume because of an internal error. Please try again or upload a different file."
 
 
@@ -118,13 +120,16 @@ def _process_resume(db, resume_id: UUID) -> None:  # noqa: ANN001
         raise files.ParseFailure("The stored file is missing. Please upload the resume again.", "no_file")
 
     ex = files.extract_text(resume.file_bytes)
-    result = extractor.extract(ex.text, names)
+    refresh = resume_id in REFRESH_EXTRACTION
+    REFRESH_EXTRACTION.discard(resume_id)
+    result = extractor.extract(ex.text, names, refresh=refresh) if refresh else extractor.extract(ex.text, names)
     chunks, embedded = build_chunks(ex.text, names)
 
     warnings = list(ex.warnings) + list(result.warnings)
     if not embedded:
         warnings.append("Semantic matching is unavailable for this resume (embeddings service not reachable); keyword and alias matching is used.")
     flags: list[Flag] = [*ex.flags, *integrity.scan(ex.text, hidden_chars=ex.hidden_chars, hidden_text=ex.hidden_text), *result.flags, *extractor.date_flags(result.parsed)]
+    flags += integrity.not_a_resume_flag(result.parsed, result.skills, ex.text)
 
     resume.text = ex.text
     resume.page_count = ex.page_count

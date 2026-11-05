@@ -10,7 +10,8 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { AuthGate, useLogout } from "@/lib/auth";
-import type { HealthOut, NotificationOut, ProfileOut, ResumeOut, Role, UserOut } from "@/lib/types";
+import { useCandidateDashboard, usePrefetch } from "@/lib/queries";
+import type { NotificationOut, Role, UserOut } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -48,25 +49,6 @@ function ThemeToggle() {
   );
 }
 
-function HealthDots() {
-  const { data } = useQuery({ queryKey: ["health"], queryFn: () => api<HealthOut>("/health"), refetchInterval: 60_000 });
-  if (!data) return null;
-  const item = (label: string, ok: boolean, detail: string | null) => (
-    <span title={detail ?? (ok ? "OK" : "Unavailable")} className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-      <span className={cn("size-2 rounded-full", ok ? "bg-success" : "bg-warning")} aria-hidden />
-      {label}
-      <span className="sr-only">{ok ? "available" : "degraded"}</span>
-    </span>
-  );
-  return (
-    <div className="hidden items-center gap-3 md:flex" aria-label="System status">
-      {item("DB", data.database.ok, data.database.detail)}
-      {item("LLM", data.llm.ok, data.llm.detail ?? data.llm_model)}
-      {item("Embeddings", data.embeddings.ok, data.embeddings.detail ?? data.embedding_model)}
-    </div>
-  );
-}
-
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("") || "U";
 }
@@ -81,11 +63,12 @@ function Shell({ user, children }: { user: UserOut; children: ReactNode }) {
     refetchInterval: 15_000,
   });
   const isCand = user.role === "candidate";
-  const profile = useQuery({ queryKey: ["profile"], queryFn: () => api<ProfileOut>("/candidates/me/profile"), enabled: isCand, retry: false });
-  const resumes = useQuery({ queryKey: ["resumes"], queryFn: () => api<ResumeOut[]>("/candidates/me/resumes"), enabled: isCand, retry: false });
-  const pr = profile.data;
-  const checks = pr && resumes.data ? [resumes.data.length > 0, !!pr.headline, !!pr.phone, !!pr.location, pr.links.length > 0, pr.interests.length > 0] : null;
-  const pct = checks ? Math.round((checks.filter(Boolean).length / checks.length) * 100) : null;
+  const prefetch = usePrefetch();
+  const dash = useCandidateDashboard(isCand);
+  const comp = dash.data?.profile.completion;
+  // Server value only. While loading, reserve the card space (no pop-in); at 100% the card is gone.
+  const showCompletion = isCand && ((!dash.data && !dash.isError) || (comp ? comp.percent < 100 : false));
+  const pct = comp ? Math.round(comp.percent) : null;
   const unread = notifs?.length ?? 0;
   const items = NAV[user.role];
   const first = user.full_name.split(/\s+/)[0] || user.full_name;
@@ -101,6 +84,8 @@ function Shell({ user, children }: { user: UserOut; children: ReactNode }) {
             key={it.href}
             href={it.href}
             onClick={() => setOpen(false)}
+            onMouseEnter={() => prefetch(it.href)}
+            onFocus={() => prefetch(it.href)}
             aria-current={active ? "page" : undefined}
             className={cn(
               "flex items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium text-white/65 transition-all hover:bg-white/10 hover:text-white [&_svg]:size-[18px]",
@@ -129,12 +114,13 @@ function Shell({ user, children }: { user: UserOut; children: ReactNode }) {
 
   const sidebarFoot = (
     <div className="mt-auto space-y-3 p-4">
-      {user.role === "candidate" && (
-        <Link href="/candidate/resume" className="block rounded-2xl bg-white/8 p-4 transition-colors hover:bg-white/12">
+      {showCompletion && pct === null && <div className="h-[8.5rem] animate-pulse rounded-2xl bg-white/8" aria-hidden />}
+      {showCompletion && pct !== null && (
+        <Link href="/candidate/resume" onMouseEnter={() => prefetch("/candidate/resume")} className="block rounded-2xl bg-white/8 p-4 transition-colors hover:bg-white/12">
           <div className="flex items-center justify-between"><p className="text-sm font-semibold text-white">Complete your profile</p>{pct !== null && <span className="text-sm font-bold text-white tabular-nums">{pct}%</span>}</div>
           {pct !== null && <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/15" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Profile completion"><div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} /></div>}
-          <p className="mt-1 text-xs text-white/55">Upload or refine your resume to improve job matches.</p>
-          <span className="mt-3 inline-flex rounded-full bg-primary px-3 py-1 text-xs font-medium text-white">Open resume</span>
+          <p className="mt-1 text-xs text-white/55">{comp && comp.missing.length > 0 ? `Still to add: ${comp.missing.slice(0, 2).join(", ")}` : "Add a few details to improve your job matches."}</p>
+          <span className="mt-3 inline-flex rounded-full bg-primary px-3 py-1 text-xs font-medium text-white">Finish profile</span>
         </Link>
       )}
       <div className="flex items-center gap-3 rounded-2xl bg-white/6 p-3">
@@ -184,7 +170,6 @@ function Shell({ user, children }: { user: UserOut; children: ReactNode }) {
             <p className="truncate text-xl font-semibold tracking-tight sm:text-2xl">Hello, {first}</p>
             <p className="hidden truncate text-sm text-muted-foreground sm:block">{subtitle}</p>
           </div>
-          <HealthDots />
           <div className="ml-auto flex items-center gap-2">
             <Button variant="outline" size="icon" asChild aria-label={`Notifications${unread ? ` (${unread} unread)` : ""}`}>
               <Link href={`/${user.role}/notifications`} className="relative">

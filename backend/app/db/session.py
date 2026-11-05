@@ -25,10 +25,10 @@ def _build_engine() -> Engine:
 
     eng = create_engine(
         url,
-        pool_size=5,
+        pool_size=8,
         max_overflow=5,
-        pool_pre_ping=True,
-        pool_recycle=240,
+        pool_pre_ping=False,  # a pre-ping costs one extra DB round trip per request; pool_recycle covers stale connections
+        pool_recycle=270,
         echo=settings.sql_echo,
         # prepared statements are not supported by Supabase's transaction pooler; harmless on the session pooler
         connect_args={"prepare_threshold": None},

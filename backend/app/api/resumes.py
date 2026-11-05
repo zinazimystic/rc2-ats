@@ -4,12 +4,13 @@ import re
 import uuid
 
 from fastapi import APIRouter, Response
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload
+from sqlalchemy import select, update
+from sqlalchemy.orm import joinedload, undefer
 
-from app.core.deps import DB, CurrentUser
+from app.core.deps import DB, Candidate, CurrentUser
 from app.core.errors import Conflict, NotFound, Unprocessable
-from app.models import CandidateSkill, Resume
+from app.core.ratelimit import limiter
+from app.models import Application, CandidateSkill, Resume
 from app.schemas.common import Msg
 from app.schemas.resume import CandidateSkillOut, ParsedPatchIn, ParsedResume, ResumeDetailOut, ResumeOut, SkillAddIn, SkillPatchIn
 from app.services import pipeline, resumes
@@ -20,14 +21,42 @@ router = APIRouter(prefix="/resumes", tags=["resumes"])
 skills_router = APIRouter(prefix="/skills", tags=["resumes"])
 
 
+REPARSE_COOLDOWN_SECONDS = 5.0
+
+
 def _load(db, user, resume_id: uuid.UUID) -> Resume:
-    get_resume_for_user(db, user, resume_id)  # 404 when not visible
-    return db.scalar(select(Resume).where(Resume.id == resume_id).options(selectinload(Resume.skills)))
+    """One query: the resume with its skills; 404 when the user may not see it."""
+    return get_resume_for_user(db, user, resume_id, joinedload(Resume.skills), undefer(Resume.text))
 
 
 @router.get("/{resume_id}", response_model=ResumeDetailOut)
 def get_resume(resume_id: uuid.UUID, db: DB, user: CurrentUser):
-    return resumes.to_resume_detail(_load(db, user, resume_id))
+    r = _load(db, user, resume_id)
+    return resumes.to_resume_detail(r, resumes.application_stats(db, [r.id]).get(r.id))
+
+
+@router.post("/{resume_id}/primary", response_model=ResumeOut)
+def make_primary(resume_id: uuid.UUID, db: DB, user: Candidate):
+    """Make this parsed, non-deleted resume the current one (clears the flag on the candidate's others)."""
+    r = _load(db, user, resume_id)  # 404 for someone else's / deleted resume
+    if r.parse_status != "parsed":
+        raise Unprocessable("This resume has not been read yet. Wait until it finishes, then try again.", code="resume_not_parsed")
+    db.execute(update(Resume).where(Resume.candidate_id == user.id, Resume.id != r.id, Resume.is_current.is_(True)).values(is_current=False))
+    r.is_current = True
+    db.commit()
+    return resumes.to_resume_out(r, resumes.application_stats(db, [r.id]).get(r.id))
+
+
+@router.delete("/{resume_id}", response_model=Msg)
+def delete_resume(resume_id: uuid.UUID, db: DB, user: Candidate):
+    """Blocked (409 resume_in_use) while an active application uses it; soft-deleted when only finished applications do."""
+    result = resumes.delete_resumes(db, user, [resume_id])
+    if result.deleted:
+        return Msg(detail="Resume deleted")
+    b = result.blocked[0]
+    if not b.filename:
+        raise NotFound("Resume not found")
+    raise Conflict(b.reason, code="resume_in_use")
 
 
 @router.get("/{resume_id}/file")
@@ -70,11 +99,20 @@ def reprocess(resume_id: uuid.UUID, db: DB, user: CurrentUser):
     resume = _load(db, user, resume_id)
     if resume.parse_status == "processing":
         raise Conflict("This resume is already being processed", code="already_processing")
+    limiter.check(f"reparse:{resume.id}", 1, REPARSE_COOLDOWN_SECONDS, "Please wait a few seconds before trying again.")
+    limiter.hit(f"reparse:{resume.id}", REPARSE_COOLDOWN_SECONDS)
+    # true re-parse: skip the cached extraction for this resume; candidate-confirmed skills are kept by the pipeline
+    pipeline.REFRESH_EXTRACTION.add(resume.id)
     resume.parse_status, resume.parse_error = "pending", None
+    db.execute(
+        update(Application).where(Application.resume_id == resume.id, Application.status.in_(pipeline.OPEN_STATUSES))
+        .values(processing_state="queued", processing_error=None)
+    )
     db.commit()
-    safe_call(pipeline.enqueue_resume, resume.id)
+    safe_call(pipeline.enqueue_resume, resume.id)  # re-queues the active applications that use it once parsing finishes
     db.expire_all()
-    return resumes.to_resume_out(_load(db, user, resume_id))
+    r = _load(db, user, resume_id)
+    return resumes.to_resume_out(r, resumes.application_stats(db, [r.id]).get(r.id))
 
 
 @router.post("/{resume_id}/skills", response_model=CandidateSkillOut, status_code=201)

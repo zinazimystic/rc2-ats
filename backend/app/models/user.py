@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Boolean, ForeignKey, String, Uuid
+from sqlalchemy import Boolean, ForeignKey, Integer, String, Uuid, false
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, IdMixin, TimestampMixin
@@ -17,6 +17,14 @@ class User(Base, IdMixin, TimestampMixin):
     full_name: Mapped[str] = mapped_column(String(120))
     role: Mapped[str] = mapped_column(String(20), index=True)  # recruiter | candidate
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    email_verified_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
+    email_code_hash: Mapped[Optional[str]] = mapped_column(String(128))
+    email_code_expires_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
+    email_code_attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+
+    @property
+    def email_verified(self) -> bool:
+        return self.email_verified_at is not None
 
     profile: Mapped[Optional["CandidateProfile"]] = relationship(
         back_populates="user", uselist=False, cascade="all, delete-orphan", foreign_keys="CandidateProfile.user_id"
@@ -33,6 +41,7 @@ class CandidateProfile(Base, IdMixin, TimestampMixin):
     links: Mapped[list] = mapped_column(JSONType, default=list)
     interests: Mapped[list] = mapped_column(JSONType, default=list)
     talent_pool_opt_in: Mapped[bool] = mapped_column(Boolean, default=False)
+    whatsapp_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     retention_until: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
     # set when a confirmed duplicate record is linked to a primary candidate record
     merged_into_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, ForeignKey("users.id", ondelete="SET NULL"))

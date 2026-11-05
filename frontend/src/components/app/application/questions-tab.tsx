@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Pencil, Plus, RefreshCw, Sparkles, Trash2 } from "lucide-react";
 import { api, ApiError, errMsg } from "@/lib/api";
 import type { Difficulty, QuestionGenerateIn, QuestionIn, QuestionOut } from "@/lib/types";
@@ -77,7 +77,7 @@ export function QuestionsTab({ appId }: { appId: string }) {
             <label className="flex items-center gap-2"><Checkbox checked={gen.append} onChange={(e) => setGen({ ...gen, append: e.target.checked })} /> Append to existing</label>
           </div>
           {generate.isPending && <Banner tone="info">Generating — this can take up to a minute…</Banner>}
-          {generate.error && <Banner tone={unavailable ? "warning" : "danger"}>{unavailable ? "The AI model is currently unavailable, so questions can’t be generated. You can still add questions manually." : errMsg(generate.error)}</Banner>}
+          {generate.error && <Banner tone={unavailable ? "warning" : "danger"}>{unavailable ? "Question suggestions are unavailable right now. You can still add questions manually." : errMsg(generate.error)}</Banner>}
           <div className="flex gap-2">
             <Button loading={generate.isPending} disabled={total === 0} onClick={() => generate.mutate()}><Sparkles /> Generate {total} question{total === 1 ? "" : "s"}</Button>
             <Button variant="outline" onClick={() => setDlg({ open: true })}><Plus /> Add manually</Button>

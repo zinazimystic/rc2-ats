@@ -28,6 +28,7 @@ class Resume(Base, IdMixin, TimestampMixin):
     parsed: Mapped[Optional[dict]] = mapped_column(JSONType)  # ParsedResume dict
     doc_embedding: Mapped[Optional[list]] = mapped_column(Embedding)
     is_current: Mapped[bool] = mapped_column(Boolean, default=True)
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)  # soft delete: hidden from the candidate, kept for recruiters
     processing_started_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)  # used by tasks.recover_stuck
 
     chunks: Mapped[list["ResumeChunk"]] = relationship(

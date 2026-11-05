@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { AlertTriangle, Plus, Sparkles, Trash2 } from "lucide-react";
 import { api, errMsg } from "@/lib/api";
 import type {
@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, Input, Select, Textarea } from "@/components/ui/input";
 import { Banner } from "@/components/ui/misc";
+import { friendlyError } from "@/lib/errors";
 
 const DEFAULT_WEIGHTS: JobWeights = { skills: 50, experience: 25, projects: 15, qualifications: 10 };
 
@@ -171,10 +172,10 @@ export function JobForm({ job }: { job?: JobOut }) {
             <div className="space-y-2">
               <Banner tone={extract.method === "llm" ? "success" : "warning"}>
                 {extract.method === "llm"
-                  ? "Requirements extracted by the LLM and verified against the description. Review and edit below."
-                  : "LLM unavailable — used rule-based extraction (keyword matching). Review carefully."}
+                  ? "Requirements were suggested from your description and checked against it. Review and edit below."
+                  : "We found requirements by matching keywords in your description. Review them carefully."}
               </Banner>
-              {extract.warnings.map((w, i) => <Banner key={i} tone="warning"><AlertTriangle className="mr-1 inline size-4" />{w}</Banner>)}
+              {extract.warnings.map((w, i) => <Banner key={i} tone="warning"><AlertTriangle className="mr-1 inline size-4" />{friendlyError(w, "Some requirements may need a closer look.")}</Banner>)}
               {[...extract.required_skills, ...extract.preferred_skills].some((s) => !s.verified) && (
                 <Banner tone="warning">Some skills could not be found verbatim in the description (marked “unverified” below). Remove any that are wrong.</Banner>
               )}

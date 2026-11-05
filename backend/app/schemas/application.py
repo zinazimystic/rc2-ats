@@ -17,6 +17,7 @@ from app.schemas.common import (
     ProcessingState,
     RequirementKind,
 )
+from app.schemas.contact import ContactChecks
 from app.schemas.interview import InterviewOut
 from app.schemas.resume import ResumeDetailOut
 
@@ -145,6 +146,7 @@ class ApplicationDetailOut(BaseModel):
     allowed_transitions: list[ApplicationStatus] = []
     notes_count: int = 0
     interviews: list[InterviewOut] = []
+    contact_checks: ContactChecks | None = None  # offline checks of the candidate's contact details
     applied_at: datetime
     updated_at: datetime
 
@@ -197,6 +199,7 @@ class CompareOut(BaseModel):
 class ApplyIn(BaseModel):
     job_id: UUID
     cover_note: str | None = Field(default=None, max_length=3000)
+    resume_id: UUID | None = None  # optional: apply with a specific resume (default: the current one)
 
 
 class TimelineItem(BaseModel):

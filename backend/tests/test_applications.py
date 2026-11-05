@@ -240,3 +240,23 @@ def test_profile_and_notifications(make_client):
     assert c.get("/api/notifications").json() == []
     assert c.post("/api/notifications/read-all").status_code == 200
     assert c.post("/api/notifications/00000000-0000-0000-0000-000000000000/read").status_code == 404
+
+
+def test_apply_with_only_unreadable_resume_explains_why(make_client, fake_pipeline):
+    import uuid
+
+    from app.db.session import SessionLocal
+    from app.models import Resume
+
+    rec = make_client("recruiter", "r@example.com")
+    job = make_job(rec)
+    c = make_client("candidate", "alice@example.com", "Alice Tester")
+    rid = uuid.UUID(upload(c).json()["id"])
+    with SessionLocal() as db:
+        r = db.get(Resume, rid)
+        r.parse_status, r.parse_error = "failed", "This PDF is corrupt or unreadable."
+        db.commit()
+    r = apply_to(c, job["id"])
+    body = r.json()
+    assert r.status_code == 422 and body["code"] == "resume_unreadable"
+    assert "corrupt or unreadable" in body["detail"] and "Upload a resume" not in body["detail"]

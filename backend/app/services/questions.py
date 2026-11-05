@@ -120,8 +120,11 @@ def generate_questions(db: Session, application: Application, spec: QuestionGene
         return existing_rows if spec.append else []
     user = ("<context>\n" + json.dumps(ctx, default=str) + "\n</context>\nRequested counts per difficulty: " + json.dumps(counts) +
             (". Include at least one project-based question." if spec.include_projects and ctx.get("projects") else ".") + "\nReturn the json object now.")
-    out = _call(prompts.QUESTIONS_SYSTEM, user)
     idx = Index(resume.text) if resume and resume.text else None
+    app_id = application.id
+    db.commit()  # end the read transaction: do not hold a pooled DB connection open during the 30-60 s LLM call
+    out = _call(prompts.QUESTIONS_SYSTEM, user)
+    application = db.get(Application, app_id)
     cleaned = _clean(out.questions, existing_texts, idx)
     chosen: list[dict] = []
     taken = {d: 0 for d in DIFFS}

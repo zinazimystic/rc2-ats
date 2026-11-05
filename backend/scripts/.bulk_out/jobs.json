@@ -1,0 +1,12 @@
+{
+ "backend_py": "1ea6a889-c105-4559-abc2-dc5ddd005213",
+ "frontend": "c9797b84-a553-445b-bdf2-b51e2ac0c96d",
+ "fullstack": "315479ad-a659-402c-b66f-018f59d0ba2f",
+ "devops": "bbd8cd4b-5b5f-4507-9187-b2f396d1a405",
+ "data_sci": "0e8f1a7a-1b36-4851-9e07-7323db1d2169",
+ "mobile": "d03f5eff-5664-42ee-97a5-3291dd3aff8c",
+ "qa": "0770533e-234c-4690-be26-9f6ef1c1122f",
+ "java": "b4e3a462-625a-4486-9757-f1bcc8f053f4",
+ "data_eng": "5ccf840e-5e63-4c55-9f6b-5f43735a36b1",
+ "ml_eng": "e9c8fcca-4021-4330-9c44-7da9e5649405"
+}

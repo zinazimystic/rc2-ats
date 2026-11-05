@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { CalendarPlus, MessageSquareText } from "lucide-react";
 import { api, ApiError, errMsg } from "@/lib/api";
 import type { ConflictErrorOut, ConflictOut, FeedbackIn, InterviewIn, InterviewOut, InterviewType, Recommendation } from "@/lib/types";

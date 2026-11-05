@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { BriefcaseBusiness, CalendarCheck, ClipboardCheck, Plus, Star, Trophy, UserX, Users } from "lucide-react";
 import { api, qs } from "@/lib/api";
@@ -23,11 +23,13 @@ const STAGE_COLOR: Record<string, string> = {
 export default function Dashboard() {
   const [jobId, setJobId] = useState("");
   const [now] = useState(() => Date.now());
-  const jobs = useQuery({ queryKey: ["jobs", "all"], queryFn: () => api<JobListItem[]>("/jobs") });
+  const jobs = useQuery({ queryKey: ["jobs", "all"], queryFn: () => api<JobListItem[]>("/jobs"), staleTime: 45_000 });
   const q = useQuery({
     queryKey: ["analytics", jobId],
     queryFn: () => api<AnalyticsOut>(`/analytics/overview${qs({ job_id: jobId })}`),
     refetchInterval: 10_000,
+    staleTime: 30_000,
+    placeholderData: keepPreviousData,
   });
   const ivs = useQuery({ queryKey: ["interviews", "dash"], queryFn: () => api<InterviewOut[]>("/interviews"), retry: false });
   const upcoming = (ivs.data ?? []).filter((iv) => iv.status === "scheduled" && new Date(iv.end_at).getTime() >= now).sort((a, b) => a.start_at.localeCompare(b.start_at)).slice(0, 4);
@@ -49,8 +51,11 @@ export default function Dashboard() {
       />
       {q.isError ? (
         <ErrorState error={q.error} retry={() => q.refetch()} />
-      ) : !d ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-32 rounded-2xl" />)}</div>
+      ) : !d || (ivs.isPending && !ivs.data) ? (
+        <div className="space-y-6" aria-busy="true" aria-label="Loading dashboard">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-36 rounded-3xl" />)}</div>
+          <div className="grid gap-4 lg:grid-cols-[1fr_340px]"><Skeleton className="h-72 rounded-3xl" /><Skeleton className="h-72 rounded-3xl" /></div>
+        </div>
       ) : d.kpis.total_applications === 0 && d.kpis.total_jobs === 0 ? (
         <EmptyState title="No data yet" description="Create your first job and share it with candidates to see analytics." action={<Button asChild><Link href="/recruiter/jobs/new">Create a job</Link></Button>} />
       ) : (

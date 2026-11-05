@@ -57,3 +57,11 @@ def scan(text: str, *, hidden_chars: int = 0, hidden_text: str = "") -> list[Fla
     if len(text.strip()) < 300:
         flags.append(Flag(type="low_text", severity="warning", message="Very little text was found; extraction may be incomplete."))
     return flags
+
+
+def not_a_resume_flag(parsed, skills, text: str) -> list[Flag]:  # noqa: ANN001
+    """The document has substantial text but no skills, roles, education or projects: probably not a resume at all."""
+    if skills or parsed.experience or parsed.education or parsed.projects or len(text.strip()) < 200:
+        return []
+    return [Flag(type="not_a_resume", severity="warning",
+                 message="No skills, work experience or education could be found. This document may not be a resume.")]

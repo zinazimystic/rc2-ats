@@ -29,6 +29,8 @@ class Settings(BaseSettings):
     deepseek_base_url: str = "https://api.deepseek.com"
     deepseek_model: str = "deepseek-flash"
     llm_timeout_seconds: float = 90.0
+    deepseek_fallback_model: str = ""  # optional stronger model tried once when the primary cannot produce valid JSON
+    default_phone_region: str = "PK"  # ISO region assumed for phone numbers without a country code
 
     aws_bearer_token_bedrock: str = ""
     aws_region: str = "us-east-1"
@@ -39,7 +41,7 @@ class Settings(BaseSettings):
     sem_weak: float = 0.40
 
     tasks_eager: bool = False  # run background tasks inline (tests)
-    task_workers: int = 3
+    task_workers: int = 4
 
     @property
     def resolved_database_url(self) -> str:

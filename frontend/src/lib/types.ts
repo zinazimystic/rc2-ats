@@ -82,6 +82,7 @@ export interface UserOut {
   full_name: string;
   role: Role;
   created_at: string;
+  email_verified?: boolean;
 }
 export interface HealthComponent {
   ok: boolean;
@@ -280,6 +281,15 @@ export interface ResumeOut {
   parsed: ParsedResume | null;
   skills: CandidateSkillOut[];
   created_at: string;
+  application_count?: number;
+  in_use?: boolean;
+  notices?: ResumeNotice[];
+}
+export interface ResumeNotice {
+  code: string;
+  level: "info" | "warning" | "error";
+  message: string;
+  action: "reparse" | "edit" | null;
 }
 export interface ResumeDetailOut extends ResumeOut {
   text: string | null;
@@ -310,6 +320,7 @@ export interface ProfileIn {
   interests?: string[] | null;
   talent_pool_opt_in?: boolean | null;
   retention_until?: string | null;
+  whatsapp_enabled?: boolean | null;
 }
 export interface ProfileOut {
   user_id: string;
@@ -322,6 +333,42 @@ export interface ProfileOut {
   interests: string[];
   talent_pool_opt_in: boolean;
   retention_until: string | null;
+  whatsapp_enabled?: boolean;
+  contact_checks?: ContactChecks;
+  completion?: ProfileCompletion;
+}
+export interface ProfileCompletion {
+  percent: number;
+  missing: string[];
+}
+export interface EmailCheck {
+  value: string;
+  valid_format: boolean;
+  verified: boolean;
+  verified_at: string | null;
+}
+export interface WhatsappCheck {
+  status: "declared" | "not_declared" | "unknown";
+  link: string | null;
+  note: string;
+}
+export interface PhoneCheck {
+  raw: string;
+  e164: string | null;
+  valid: boolean;
+  possible: boolean;
+  country_code: string | number | null;
+  region: string | null;
+  country: string | null;
+  location: string | null;
+  line_type: string | null;
+  national_length: number | null;
+  issues: string[];
+  whatsapp: WhatsappCheck;
+}
+export interface ContactChecks {
+  email: EmailCheck;
+  phone: PhoneCheck | null;
 }
 
 /* ----------------------------------------------------------------- assessment */
@@ -435,6 +482,7 @@ export interface ApplicationDetailOut {
   assessment: AssessmentOut | null;
   allowed_transitions: ApplicationStatus[];
   notes_count: number;
+  contact_checks?: ContactChecks | null;
   interviews: InterviewOut[];
   applied_at: string;
   updated_at: string;
@@ -481,6 +529,7 @@ export interface CompareOut {
 /* ----------------------------------------------------------------- candidate views */
 export interface ApplyIn {
   job_id: string;
+  resume_id?: string | null;
   cover_note?: string | null;
 }
 export interface TimelineItem {
@@ -739,4 +788,46 @@ export interface TalentPoolItem {
   missing_skills: string[];
   previously_applied_to: string | null;
   invited: boolean;
+}
+
+/* ----------------------------------------------------------------- candidate dashboard & match */
+export interface UpcomingInterview extends CandidateInterviewOut {
+  job_title: string;
+}
+export interface CandidateDashboardOut {
+  profile: ProfileOut;
+  resumes: ResumeOut[];
+  applications: CandidateApplicationOut[];
+  recommendations: RecommendationOut[];
+  open_jobs: JobListItem[];
+  upcoming_interviews: UpcomingInterview[];
+  unread_notifications: number;
+}
+export type MatchBand = "strong" | "good" | "partial" | "low";
+export interface MyMatchRequirement {
+  skill: string;
+  kind: RequirementKind;
+  importance: number;
+  status: EvidenceStatus;
+  matched_as: string | null;
+  evidence: string | null;
+}
+export interface MyMatchOut {
+  job: JobBrief;
+  resume: { id: string; filename: string } | null;
+  needs_resume: boolean;
+  score: number;
+  band: MatchBand;
+  components: ComponentSummary;
+  requirements: MyMatchRequirement[];
+  strengths: string[];
+  gaps: string[];
+  improvements: LearningSuggestion[];
+  tips: string[];
+  already_applied: boolean;
+  semantic_available: boolean;
+}
+export interface DeleteResumesOut {
+  deleted: string[];
+  blocked: { id: string; filename: string; reason: string }[];
 }
