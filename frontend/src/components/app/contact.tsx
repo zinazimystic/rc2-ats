@@ -79,17 +79,23 @@ function VerifyEmailDialog({ open, onOpenChange, email }: { open: boolean; onOpe
     const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
     return () => clearTimeout(t);
   }, [cooldown]);
+  const [delivery, setDelivery] = useState<"email" | "simulated">("email");
   const send = useMutation({
-    mutationFn: () => api<Msg>("/auth/email/send-code", { method: "POST" }),
-    onSuccess: () => {
+    mutationFn: () => api<Msg & { delivery?: "email" | "simulated"; resend_in_seconds?: number }>("/auth/email/send-code", { method: "POST" }),
+    onSuccess: (r) => {
       setSent(true);
       setCode("");
       setBad(false);
-      setCooldown(30);
+      setCooldown(r.resend_in_seconds ?? 60);
+      setDelivery(r.delivery ?? "email");
       qc.invalidateQueries({ queryKey: ["notifications"] });
-      notify.info("Code sent", { description: "Demo mode: no real email is sent. Your code is in Notifications." });
+      notify.success("Code sent", { description: r.detail });
     },
-    onError: (e) => notify.error(e),
+    onError: (e) => {
+      const wait = (e as { body?: { retry_after?: number } })?.body?.retry_after;
+      if (wait) setCooldown(wait);
+      notify.error(e);
+    },
   });
   const verify = useMutation({
     mutationFn: (c: string) => api<UserOut>("/auth/email/verify", { body: { code: c } }),
@@ -112,7 +118,11 @@ function VerifyEmailDialog({ open, onOpenChange, email }: { open: boolean; onOpe
           <DialogTitle>Verify your email</DialogTitle>
           <DialogDescription>We’ll send a 6-digit code to {email}.</DialogDescription>
         </DialogHeader>
-        <Notice tone="info" title="Demo mode">No real email is sent. After you request a code, find it in your <Link href="/candidate/notifications" className="font-medium underline" onClick={() => onOpenChange(false)}>Notifications</Link>.</Notice>
+        {sent && delivery === "simulated" ? (
+          <Notice tone="info" title="Demo mode">No real email is sent. Find your code in your <Link href="/candidate/notifications" className="font-medium underline" onClick={() => onOpenChange(false)}>Notifications</Link>.</Notice>
+        ) : (
+          <p className="text-xs text-muted-foreground">The code is valid for 15 minutes. You can request a new one after 1 minute.</p>
+        )}
         {!sent ? (
           <DialogFooter>
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>

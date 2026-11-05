@@ -7,6 +7,8 @@ from collections import OrderedDict
 from threading import Lock
 from typing import Any
 
+from sqlalchemy import select
+
 from app.db.session import SessionLocal
 from app.models import AICache
 
@@ -39,6 +41,43 @@ def get(key: str) -> Any | None:
     except Exception as exc:  # cache must never break the pipeline
         log.debug("cache read failed: %s", exc)
     return None
+
+
+def get_many(keys: list[str]) -> dict[str, Any]:
+    """Batch lookup: memory first, then ONE database query for everything missing (round trips matter on a remote DB)."""
+    out: dict[str, Any] = {}
+    missing: list[str] = []
+    with _lock:
+        for k in keys:
+            if k in _MEM:
+                _MEM.move_to_end(k)
+                out[k] = _MEM[k]
+            else:
+                missing.append(k)
+    if missing:
+        try:
+            with SessionLocal() as db:
+                for row in db.scalars(select(AICache).where(AICache.key.in_(missing))):
+                    _remember(row.key, row.value)
+                    out[row.key] = row.value
+        except Exception as exc:
+            log.debug("cache batch read failed: %s", exc)
+    return out
+
+
+def put_many(items: list[tuple[str, str, Any]]) -> None:
+    """Batch insert of (key, kind, value); existing keys are skipped. Two round trips regardless of size."""
+    if not items:
+        return
+    for k, _, v in items:
+        _remember(k, v)
+    try:
+        with SessionLocal() as db:
+            have = set(db.scalars(select(AICache.key).where(AICache.key.in_([k for k, _, _ in items]))))
+            db.add_all([AICache(key=k, kind=kind, value=v) for k, kind, v in items if k not in have])
+            db.commit()
+    except Exception as exc:
+        log.debug("cache batch write failed: %s", exc)
 
 
 def put(key: str, kind: str, value: Any, overwrite: bool = False) -> None:

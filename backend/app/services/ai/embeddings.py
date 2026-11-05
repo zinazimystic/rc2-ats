@@ -92,9 +92,11 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
         raise EmbeddingUnavailable("Embeddings are not configured (set AWS_BEARER_TOKEN_BEDROCK).")
     out: list[list[float] | None] = [None] * len(texts)
     todo: dict[str, list[int]] = {}
+    all_keys = [_key(t) for t in texts]
+    hits = cache.get_many(list(dict.fromkeys(all_keys)))  # one DB round trip for the whole batch
     for i, t in enumerate(texts):
-        k = _key(t)
-        hit = cache.get(k)
+        k = all_keys[i]
+        hit = hits.get(k)
         if hit and "v" in hit and len(hit["v"]) == settings.embedding_dim:
             out[i] = hit["v"]
         else:
@@ -111,9 +113,9 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
             _disable(30)
             raise EmbeddingUnavailable(f"Embedding call failed: {type(exc).__name__}") from exc
         for k, v in zip(keys, vecs):
-            cache.put(k, "embedding", {"v": v})
             for i in todo[k]:
                 out[i] = v
+        cache.put_many([(k, "embedding", {"v": v}) for k, v in zip(keys, vecs)])
     return out  # type: ignore[return-value]
 
 

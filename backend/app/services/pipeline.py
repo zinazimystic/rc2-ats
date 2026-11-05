@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import math
 import re
+from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from uuid import UUID
 
@@ -122,8 +123,12 @@ def _process_resume(db, resume_id: UUID) -> None:  # noqa: ANN001
     ex = files.extract_text(resume.file_bytes)
     refresh = resume_id in REFRESH_EXTRACTION
     REFRESH_EXTRACTION.discard(resume_id)
-    result = extractor.extract(ex.text, names, refresh=refresh) if refresh else extractor.extract(ex.text, names)
-    chunks, embedded = build_chunks(ex.text, names)
+    # The LLM extraction (slow) and chunking + embedding (network bound) are independent: run them side by side.
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        f_chunks = pool.submit(build_chunks, ex.text, names)
+        f_result = pool.submit(extractor.extract, ex.text, names, refresh=True) if refresh else pool.submit(extractor.extract, ex.text, names)
+        result = f_result.result()
+        chunks, embedded = f_chunks.result()
 
     warnings = list(ex.warnings) + list(result.warnings)
     if not embedded:

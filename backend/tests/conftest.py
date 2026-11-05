@@ -17,6 +17,10 @@ os.environ.update(
         "JWT_SECRET": "test-secret-not-for-production",
         "RECRUITER_INVITE_CODE": "",
         "COOKIE_SECURE": "false",
+        "SMTP_HOST": "",
+        "SMTP_USER": "",
+        "SMTP_PASSWORD": "",
+        "SMTP_FROM_EMAIL": "",
     }
 )
 

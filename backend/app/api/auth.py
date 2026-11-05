@@ -11,7 +11,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.core.config import settings
 from app.core.deps import DB, CurrentUser, invalidate_user
-from app.core.errors import BadRequest, Conflict, Forbidden, TooManyRequests, Unauthorized
+from app.core.errors import BadRequest, Conflict, Forbidden, ServiceUnavailable, TooManyRequests, Unauthorized
 from app.core.ratelimit import limiter
 from app.core.security import (
     burn_password_check,
@@ -23,8 +23,9 @@ from app.core.security import (
 )
 from app.models import CandidateProfile, User
 from app.db.types import utcnow
-from app.schemas.auth import EmailCodeIn, LoginIn, RegisterIn, UserOut
+from app.schemas.auth import EmailCodeIn, EmailCodeSentOut, LoginIn, RegisterIn, UserOut
 from app.schemas.common import Msg
+from app.services.mailer import EmailDeliveryError, send_email, verification_email
 from app.services.notifications import notify
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -83,40 +84,58 @@ def me(user: CurrentUser):
     return user
 
 
-# ----------------------------------------------------------------------------- email verification (delivery is simulated)
+# ----------------------------------------------------------------------------- email verification
 EMAIL_CODE_TTL = timedelta(minutes=15)
 EMAIL_CODE_MAX_ATTEMPTS = 5
-EMAIL_SEND_LIMIT = 3
-EMAIL_SEND_WINDOW = 600.0
+EMAIL_RESEND_SECONDS = 60
+EMAIL_SEND_LIMIT = 5
+EMAIL_SEND_WINDOW = 900.0
 
 
 def _code_hash(user_id, code: str) -> str:
     return hmac.new(f"{settings.jwt_secret}:{user_id}".encode(), code.encode(), hashlib.sha256).hexdigest()
 
 
-@router.post("/email/send-code", response_model=Msg)
+@router.post("/email/send-code", response_model=EmailCodeSentOut)
 def send_email_code(db: DB, user: CurrentUser):
-    """Create a 6-digit code (stored hashed, valid 15 minutes). No real email service exists: the demo email lands in the outbox
-    and in the user's notifications."""
+    """Create a 6-digit code (stored hashed, valid 15 minutes) and email it over SMTP.
+    Without SMTP configured the email is simulated (outbox + in-app notification). A new code can be requested after 60 s."""
     if user.email_verified_at is not None:
         raise Conflict("Your email is already verified.", code="already_verified")
+    now = utcnow()
+    if user.email_code_expires_at is not None:
+        wait = int((user.email_code_expires_at - EMAIL_CODE_TTL + timedelta(seconds=EMAIL_RESEND_SECONDS) - now).total_seconds())
+        if wait > 0:
+            raise TooManyRequests(f"Please wait {wait} seconds before requesting another code.", code="resend_too_soon",
+                                  extra={"retry_after": wait})
     key = f"emailcode:{user.id}"
     limiter.check(key, EMAIL_SEND_LIMIT, EMAIL_SEND_WINDOW, "You've requested too many codes. Please wait a few minutes and try again.")
-    limiter.hit(key, EMAIL_SEND_WINDOW)
     code = f"{secrets.randbelow(10**6):06d}"
+    previous = (user.email_code_hash, user.email_code_expires_at, user.email_code_attempts)
     user.email_code_hash = _code_hash(user.id, code)
-    user.email_code_expires_at = utcnow() + EMAIL_CODE_TTL
+    user.email_code_expires_at = now + EMAIL_CODE_TTL
     user.email_code_attempts = 0
-    body = (
-        f"Your verification code is {code}. It expires in 15 minutes. "
-        "This is a demo email: no real email is sent, so the code is shown here instead."
-    )
-    notify(db, type="email_verification", title="Your email verification code (demo)", body=body, user_id=user.id,
-           recipient_email=user.email, channel="email_sim")
-    notify(db, type="email_code", title=f"Your verification code is {code} (demo email)", body=body, user_id=user.id, link="/profile")
+    minutes = int(EMAIL_CODE_TTL.total_seconds() // 60)
+    if settings.smtp_enabled:
+        subject, text, html_body = verification_email(user.full_name, code, minutes)
+        try:
+            send_email(user.email, subject, text, html_body)
+        except EmailDeliveryError:
+            user.email_code_hash, user.email_code_expires_at, user.email_code_attempts = previous
+            db.rollback()
+            raise ServiceUnavailable("We couldn't send the email right now. Please try again in a moment.", code="email_delivery_failed")
+        delivery, detail = "email", f"We've sent a 6-digit code to {user.email}. It expires in {minutes} minutes."
+    else:
+        body = f"Your verification code is {code}. It expires in {minutes} minutes. This is a demo email: no real email is sent."
+        notify(db, type="email_verification", title="Your email verification code (demo)", body=body, user_id=user.id,
+               recipient_email=user.email, channel="email_sim")
+        notify(db, type="email_code", title=f"Your verification code is {code} (demo email)", body=body, user_id=user.id, link="/profile")
+        delivery, detail = "simulated", "Demo mode: no real email is sent. Your code is in your notifications."
+    limiter.hit(key, EMAIL_SEND_WINDOW)
     db.commit()
     invalidate_user(user.id)
-    return Msg(detail="We've sent a 6-digit code. It is a demo email, so you'll find it in your notifications.")
+    return EmailCodeSentOut(detail=detail, delivery=delivery, expires_in_seconds=int(EMAIL_CODE_TTL.total_seconds()),
+                            resend_in_seconds=EMAIL_RESEND_SECONDS)
 
 
 @router.post("/email/verify", response_model=UserOut)

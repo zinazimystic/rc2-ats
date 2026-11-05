@@ -243,7 +243,7 @@ def recommend_from(resume: Resume, jobs: list[Job], applied: set, interests: tup
     for job in jobs:
         if job.id in applied:
             continue
-        _, results, sc = _score_against(job, resume, interests)
+        _, results, sc = _score_against(job, resume, interests, with_projects=True)
         total = min(100.0, sc.total + _interest_boost(interests, job))
         matched, missing = _split(results)
         req_n = sum(1 for r in results if r.kind == "required")

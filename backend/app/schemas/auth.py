@@ -62,6 +62,13 @@ class EmailCodeIn(BaseModel):
     code: str = Field(min_length=4, max_length=12)
 
 
+class EmailCodeSentOut(BaseModel):
+    detail: str
+    delivery: str  # email | simulated
+    expires_in_seconds: int
+    resend_in_seconds: int
+
+
 class HealthComponent(BaseModel):
     ok: bool
     detail: str | None = None

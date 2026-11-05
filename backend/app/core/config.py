@@ -32,6 +32,16 @@ class Settings(BaseSettings):
     deepseek_fallback_model: str = ""  # optional stronger model tried once when the primary cannot produce valid JSON
     default_phone_region: str = "PK"  # ISO region assumed for phone numbers without a country code
 
+    # Outgoing email (SMTP). When unset, verification codes fall back to the simulated outbox.
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_security: str = "starttls"  # starttls | ssl | none
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = ""
+    smtp_from_name: str = "RC3 Talent Intelligence"
+    smtp_timeout_seconds: float = 15.0
+
     aws_bearer_token_bedrock: str = ""
     aws_region: str = "us-east-1"
     bedrock_embed_model: str = "amazon.titan-embed-text-v2:0"
@@ -55,6 +65,10 @@ class Settings(BaseSettings):
         if url.startswith("postgresql://"):
             url = "postgresql+psycopg://" + url[len("postgresql://") :]
         return url
+
+    @property
+    def smtp_enabled(self) -> bool:
+        return bool(self.smtp_host and self.smtp_user and self.smtp_password and self.smtp_from_email)
 
     @property
     def is_sqlite(self) -> bool:
