@@ -3,7 +3,7 @@ import { useState, useSyncExternalStore, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/theme-provider";
 import {
   Bell, BriefcaseBusiness, CalendarDays, CopyCheck, FileText, LayoutDashboard, LogOut, Menu, Moon, Search,
   Send, Sparkles, Sun, X,

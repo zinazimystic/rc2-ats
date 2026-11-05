@@ -150,8 +150,6 @@ def test_email_code_smtp_path_and_delivery_failure_restores_previous_code(make_c
     uid = _u.UUID(c.get("/api/auth/me").json()["id"])
     r = c.post("/api/auth/email/send-code")
     assert r.status_code == 200 and r.json()["delivery"] == "email" and len(sent) == 1 and sent[0][0] == "smtp@example.com"
-    import re
-    code = re.search(r"(\d{6})", sent[0][1]).group(1)
     before = db.get(User, uid)
     db.refresh(before)
     old_hash = before.email_code_hash

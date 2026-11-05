@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useSyncExternalStore, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter } from "next/navigation";
 import { api, ApiError } from "./api";
@@ -40,8 +40,11 @@ export function useLogout() {
   };
 }
 
+const subscribeNoop = () => () => {};
+
 export function AuthGate({ role, children }: { role: Role; children: (user: UserOut) => ReactNode }) {
   const { data: me, isLoading, error, refetch } = useMe();
+  const mounted = useSyncExternalStore(subscribeNoop, () => true, () => false);
   const router = useRouter();
   const pathname = usePathname();
   useEffect(() => {
@@ -60,7 +63,9 @@ export function AuthGate({ role, children }: { role: Role; children: (user: User
         </button>
       </div>
     );
-  if (isLoading || !me || me.role !== role)
+  // The server never knows the session, so the first client render must match the server's skeleton exactly;
+  // once mounted, the (already prefetched) user swaps in without a network wait.
+  if (!mounted || isLoading || !me || me.role !== role)
     return (
       <div className="space-y-4 p-8">
         <Skeleton className="h-8 w-64" />

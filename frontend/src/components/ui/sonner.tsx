@@ -1,6 +1,6 @@
 "use client";
 import { Toaster as Sonner } from "sonner";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/theme-provider";
 import { AlertTriangle, CheckCircle2, Info, Loader2, XCircle } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 

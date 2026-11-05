@@ -6,7 +6,7 @@ import re
 from dataclasses import dataclass
 from uuid import UUID
 
-from sqlalchemy import and_, inspect as sa_inspect, or_, select, text as sql_text
+from sqlalchemy import and_, func, inspect as sa_inspect, or_, select, text as sql_text
 from sqlalchemy.orm import Session, joinedload, load_only, selectinload, undefer
 
 from app.core.errors import NotFound
@@ -131,6 +131,81 @@ def _chunk_hits(db: Session, resume_ids: list[UUID], qv: list[float]) -> dict[UU
 
 
 # --------------------------------------------------------------------------- talent search
+_STOP_WORDS = {
+    "and", "the", "with", "for", "years", "year", "experience", "experienced", "developer", "developers", "engineer", "engineers",
+    "who", "has", "have", "good", "strong", "skills", "skill", "knowledge", "in", "of", "an", "to", "on", "at", "or", "candidates",
+    "candidate", "people", "someone", "find", "looking", "need", "using", "worked", "working",
+}
+
+
+def _scale_search(sim: float) -> float:
+    """Cosine -> 0..1 for search. Lower floor than job scoring: short queries (e.g. '.net') have low absolute similarity."""
+    return max(0.0, min(1.0, (sim - 0.15) / (0.60 - 0.15)))
+
+
+def _term_groups(query: str, detected: list[str], tax) -> list[tuple[str, list[str]]]:  # noqa: ANN001
+    """One (label, lower-cased variants) group per search term. Known skills expand to their aliases ('.net' -> dotnet, asp.net...),
+    other words are kept as typed. Matching is case-insensitive."""
+    groups: list[tuple[str, list[str]]] = []
+    for name in detected:
+        d = tax.skills.get(name, {})
+        variants = {name.lower(), *(a.lower() for a in d.get("aliases", []))}
+        variants = {v for v in variants if len(v) >= 3 or (len(v) >= 2 and re.search(r"[^a-z0-9]", v))}
+        if variants:
+            groups.append((name, sorted(variants)))
+    covered = {v for _, vs in groups for v in vs}
+    for tok in re.findall(r"[a-z0-9+#.]+", query.lower()):
+        tok = tok.rstrip(".")
+        if len(tok) < 2 or tok in _STOP_WORDS or tok in covered:
+            continue
+        if len(tok) == 2 and tok.isalnum():
+            continue
+        groups.append((tok, [tok]))
+        covered.add(tok)
+    return groups
+
+
+def _term_pattern(variant: str) -> re.Pattern:
+    left = r"(?<![a-z0-9])" if variant[0].isalnum() else ""  # '.net' may follow letters ('asp.net'); 'java' must not match 'javascript'
+    right = r"(?![a-z0-9])" if variant[-1].isalnum() else ""
+    return re.compile(left + re.escape(variant) + right, re.I)
+
+
+def _like_escape(v: str) -> str:
+    return v.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
+def _lexical(db: Session, resume_ids: list[UUID], groups: list[tuple[str, list[str]]]):
+    """Exact, case-insensitive term matching over resume text: {resume_id: (score 0..100, matched labels, evidence)}.
+    The database pre-filters with LIKE (one query), then only the few candidate texts are loaded for precise matching + quotes."""
+    if not groups or not resume_ids:
+        return {}
+    variants = sorted({v for _, vs in groups for v in vs})
+    lowered = func.lower(Resume.text)
+    pre = list(db.scalars(select(Resume.id).where(Resume.id.in_(resume_ids), or_(*[lowered.like(f"%{_like_escape(v)}%", escape="\\") for v in variants]))))
+    if not pre:
+        return {}
+    compiled = {label: [_term_pattern(v) for v in vs] for label, vs in groups}
+    out: dict[UUID, tuple[float, set[str], list[Evidence]]] = {}
+    for rid, text in db.execute(select(Resume.id, Resume.text).where(Resume.id.in_(pre))).all():
+        if not text:
+            continue
+        hit: set[str] = set()
+        ev: list[Evidence] = []
+        for label, pats in compiled.items():
+            for p in pats:
+                m = p.search(text)
+                if m:
+                    hit.add(label)
+                    if len(ev) < 3:
+                        s, e = max(0, m.start() - 90), min(len(text), m.end() + 110)
+                        ev.append(Evidence(quote=text[s:e], start=s, end=e))
+                    break
+        if hit:
+            out[rid] = (100.0 * len(hit) / len(groups), hit, ev)
+    return out
+
+
 def talent_search(db: Session, recruiter: User, req: TalentSearchIn) -> TalentSearchOut:
     tax = taxonomy()
     query = req.query.strip()
@@ -143,7 +218,7 @@ def talent_search(db: Session, recruiter: User, req: TalentSearchIn) -> TalentSe
     access = {cid: pool for cid, (_, pool) in access_u.items()}
     users = {cid: u for cid, (u, _) in access_u.items()}
     semantic_possible = embeddings.embeddings_available()
-    resumes = _current_resumes(db, list(access), text=not semantic_possible, light=True)
+    resumes = _current_resumes(db, list(access), text=False, light=True)
     out = TalentSearchOut(query=query, detected_skills=detected, mode="keyword")
     if not resumes:
         return out
@@ -160,8 +235,9 @@ def talent_search(db: Session, recruiter: User, req: TalentSearchIn) -> TalentSe
         hits = _chunk_hits(db, [r.id for r in resumes.values()], qv)
     else:
         out.warning = "Semantic search is unavailable right now (embeddings service not reachable); showing keyword matches."
-        if semantic_possible:  # embeddings failed mid-request: the keyword path needs the resume text (one batched load)
-            db.scalars(select(Resume).where(Resume.id.in_([r.id for r in resumes.values()])).options(undefer(Resume.text))).all()
+
+    groups = _term_groups(query, detected, tax)
+    lexical = _lexical(db, [r.id for r in resumes.values()], groups)
 
     app_rows = db.execute(
         select(Application, Job).join(Job, Job.id == Application.job_id)
@@ -171,35 +247,36 @@ def talent_search(db: Session, recruiter: User, req: TalentSearchIn) -> TalentSe
     for a, j in app_rows:
         refs.setdefault(a.candidate_id, []).append(SearchApplicationRef(application_id=a.id, job_id=j.id, job_title=j.title, status=a.status))
 
-    tokens = {t for t in re.findall(r"[a-z0-9+#.]{3,}", query.lower()) if t not in {"and", "the", "with", "for", "years", "experience", "developer", "engineer"}}
     results: list[TalentSearchResult] = []
     for cid, resume in resumes.items():
         user = users.get(cid)
         if user is None:
             continue
         have = {tax.canonical(s.name): s for s in resume.skills if not s.removed and s.presence == "present" and s.verification in ("verified", "fuzzy", "self_reported")}
-        matched = [d for d in detected if d in have]
+        lex_score, lex_labels, lex_evidence = lexical.get(resume.id, (0.0, set(), []))
+        # a skill counts as matched when the candidate's extracted skills have it OR the resume text literally mentions it
+        matched = [d for d in detected if d in have or d in lex_labels]
         coverage = (100.0 * len(matched) / len(detected)) if detected else None
-        evidence: list[Evidence] = []
+        evidence: list[Evidence] = list(lex_evidence)
         semantic = None
+        base = 0.0
         if out.mode == "semantic":
             hs = hits.get(resume.id, [])
             if hs:
                 top = hs[:2]
-                semantic = 100.0 * sum(_scale(h.sim) for h in top) / len(top)
-                evidence = [Evidence(quote=h.text[:300], start=h.start, end=min(h.end, h.start + 300), similarity=round(h.sim, 3), section=h.section) for h in hs]
-            score = (0.6 * (semantic or 0) + 0.4 * coverage) if coverage is not None else (semantic or 0)
+                semantic = 100.0 * sum(_scale_search(h.sim) for h in top) / len(top)
+                evidence += [Evidence(quote=h.text[:300], start=h.start, end=min(h.end, h.start + 300), similarity=round(h.sim, 3), section=h.section) for h in hs]
+            base = (0.6 * (semantic or 0) + 0.4 * coverage) if coverage is not None else (semantic or 0)
+            # short keyword-style queries lean on exact (case-insensitive) mentions, long natural-language ones on meaning
+            wl = 0.8 if len(groups) <= 3 else 0.35
+            score = wl * lex_score + (1 - wl) * base if lex_score > 0 else base
         else:
-            if coverage is not None:
-                score = coverage
-            else:
-                low = (resume.text or "").lower()
-                score = 100.0 * (sum(1 for t in tokens if t in low) / len(tokens)) if tokens else 0.0
+            score = max(lex_score, coverage or 0.0)
         if score <= 0:
             continue
         for m in matched:
-            s = have[m]
-            if s.evidence and not any(e.start == s.start and e.end == s.end for e in evidence):
+            s = have.get(m)
+            if s is not None and s.evidence and not any(e.start == s.start and e.end == s.end for e in evidence):
                 evidence.append(Evidence(quote=s.evidence[:300], start=s.start, end=s.end))
         results.append(TalentSearchResult(
             candidate=_brief(user, user.profile), resume_id=resume.id, score=round(score, 1),
