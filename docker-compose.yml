@@ -1,0 +1,43 @@
+# Local/containerised run (no deployment). Requires backend/.env (copy backend/.env.example).
+# Supabase Postgres is external — set DATABASE_URL in backend/.env. Leave it empty to use SQLite inside the container volume.
+#
+#   docker compose up --build
+#   open http://localhost:3000
+services:
+  api:
+    build: ./backend
+    env_file:
+      - ./backend/.env
+    environment:
+      APP_ENV: production
+      # Cookies are served over plain http on localhost; set true behind HTTPS.
+      COOKIE_SECURE: "false"
+    volumes:
+      - api-data:/app/data
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/api/health', timeout=3).status == 200 else 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        # Next.js rewrites are baked at build time: browser -> web:3000/api/* -> api:8000/api/*
+        API_URL: http://api:8000
+    environment:
+      API_URL: http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+volumes:
+  api-data:

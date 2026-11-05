@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -33,7 +33,7 @@ export default function RegisterPage() {
     resolver: zodResolver(schema),
     defaultValues: { full_name: "", email: "", password: "", role: "candidate", invite_code: "" },
   });
-  const role = form.watch("role");
+  const role = useWatch({ control: form.control, name: "role" });
   const e = form.formState.errors;
   const m = useMutation({
     mutationFn: (v: z.infer<typeof schema>) => {
