@@ -1,0 +1,1506 @@
+{
+ "skills": {
+  "Python": {
+   "category": "language",
+   "aliases": [
+    "python3",
+    "py"
+   ],
+   "related": {
+    "Django": 0.45,
+    "Flask": 0.5,
+    "FastAPI": 0.5,
+    "Pandas": 0.3,
+    "R": 0.35,
+    "Ruby": 0.4,
+    "Go": 0.35,
+    "JavaScript": 0.3
+   },
+   "learn": "Work through the official Python tutorial, then build a small CLI or API project."
+  },
+  "JavaScript": {
+   "category": "language",
+   "aliases": [
+    "js",
+    "ecmascript",
+    "es6",
+    "es2015"
+   ],
+   "related": {
+    "TypeScript": 0.7,
+    "Python": 0.3,
+    "jQuery": 0.5
+   },
+   "learn": "Practise modern ES6+ JavaScript and build a small interactive web app."
+  },
+  "TypeScript": {
+   "category": "language",
+   "aliases": [
+    "ts"
+   ],
+   "related": {
+    "NestJS": 0.5,
+    "JavaScript": 0.7
+   },
+   "learn": "Convert a small JavaScript project to TypeScript with strict mode enabled."
+  },
+  "Java": {
+   "category": "language",
+   "aliases": [
+    "java 8",
+    "java 11",
+    "java 17",
+    "jdk"
+   ],
+   "related": {
+    "Spring Boot": 0.5,
+    "C#": 0.55,
+    "Kotlin": 0.55,
+    "Scala": 0.5,
+    "Go": 0.4
+   },
+   "learn": "Build a small console or REST application in Java."
+  },
+  "C#": {
+   "category": "language",
+   "aliases": [
+    "csharp",
+    "c sharp"
+   ],
+   "related": {
+    ".NET": 0.5,
+    "Java": 0.55
+   },
+   "learn": "Build a small .NET console or web API project in C#."
+  },
+  "C++": {
+   "category": "language",
+   "aliases": [
+    "cpp",
+    "c plus plus"
+   ],
+   "related": {
+    "C": 0.6,
+    "Rust": 0.4
+   },
+   "learn": "Implement data-structure exercises in modern C++."
+  },
+  "C": {
+   "category": "language",
+   "aliases": [
+    "c language",
+    "ansi c"
+   ],
+   "related": {
+    "C++": 0.6
+   },
+   "learn": "Write small systems programs in C (pointers, memory, file I/O).",
+   "strict": true
+  },
+  "Go": {
+   "category": "language",
+   "aliases": [
+    "golang"
+   ],
+   "related": {
+    "Rust": 0.4,
+    "Java": 0.4,
+    "Python": 0.35
+   },
+   "learn": "Complete the Tour of Go and build a small HTTP service.",
+   "strict": true
+  },
+  "Rust": {
+   "category": "language",
+   "aliases": [
+    "rustlang"
+   ],
+   "related": {
+    "Go": 0.4,
+    "C++": 0.4
+   },
+   "learn": "Work through The Rust Book and build a small CLI.",
+   "strict": true
+  },
+  "PHP": {
+   "category": "language",
+   "aliases": [
+    "php7",
+    "php8"
+   ],
+   "related": {
+    "Laravel": 0.5
+   },
+   "learn": "Build a small project using PHP and read its official documentation."
+  },
+  "Ruby": {
+   "category": "language",
+   "aliases": [
+    "ruby on rails",
+    "rails",
+    "ror"
+   ],
+   "related": {
+    "Django": 0.35,
+    "Python": 0.4
+   },
+   "learn": "Build a small Rails application."
+  },
+  "Kotlin": {
+   "category": "language",
+   "aliases": [],
+   "related": {
+    "Android": 0.5,
+    "Java": 0.55
+   },
+   "learn": "Build a small project using Kotlin and read its official documentation."
+  },
+  "Swift": {
+   "category": "language",
+   "aliases": [
+    "swiftui"
+   ],
+   "related": {
+    "iOS": 0.5
+   },
+   "learn": "Build a small project using Swift and read its official documentation.",
+   "strict": true
+  },
+  "Scala": {
+   "category": "language",
+   "aliases": [],
+   "related": {
+    "Java": 0.5
+   },
+   "learn": "Build a small project using Scala and read its official documentation."
+  },
+  "R": {
+   "category": "language",
+   "aliases": [
+    "r language",
+    "rstudio"
+   ],
+   "related": {
+    "Python": 0.35
+   },
+   "learn": "Analyse a public dataset in R with tidyverse.",
+   "strict": true
+  },
+  "SQL": {
+   "category": "language",
+   "aliases": [
+    "structured query language",
+    "t-sql",
+    "tsql",
+    "pl/sql",
+    "plsql"
+   ],
+   "related": {
+    "PostgreSQL": 0.6,
+    "MySQL": 0.6,
+    "SQL Server": 0.6,
+    "SQLite": 0.5,
+    "Oracle": 0.5,
+    "Data Engineering": 0.5
+   },
+   "learn": "Practise joins, window functions and query tuning on a sample database."
+  },
+  "Bash": {
+   "category": "language",
+   "aliases": [
+    "shell scripting",
+    "shell",
+    "sh",
+    "zsh",
+    "bash scripting"
+   ],
+   "related": {
+    "Linux": 0.5
+   },
+   "learn": "Automate a routine task with a well-structured shell script."
+  },
+  "HTML": {
+   "category": "language",
+   "aliases": [
+    "html5"
+   ],
+   "related": {
+    "CSS": 0.5
+   },
+   "learn": "Build a small project using HTML and read its official documentation."
+  },
+  "CSS": {
+   "category": "language",
+   "aliases": [
+    "css3",
+    "scss",
+    "sass",
+    "less"
+   ],
+   "related": {
+    "HTML": 0.5,
+    "Tailwind CSS": 0.6,
+    "Bootstrap": 0.6
+   },
+   "learn": "Build a small project using CSS and read its official documentation."
+  },
+  "Django": {
+   "category": "framework",
+   "aliases": [
+    "django rest framework",
+    "drf"
+   ],
+   "related": {
+    "Python": 0.45,
+    "Flask": 0.65,
+    "FastAPI": 0.6,
+    "Ruby": 0.35,
+    "Laravel": 0.5,
+    "Spring Boot": 0.5,
+    "Node.js": 0.45,
+    "Express": 0.5,
+    ".NET": 0.45,
+    "NestJS": 0.5,
+    "REST APIs": 0.35,
+    "SQLAlchemy": 0.35
+   },
+   "learn": "Build a small Django project with models, views and tests."
+  },
+  "Flask": {
+   "category": "framework",
+   "aliases": [],
+   "related": {
+    "Python": 0.5,
+    "Django": 0.65,
+    "FastAPI": 0.7,
+    "Express": 0.5,
+    "REST APIs": 0.35
+   },
+   "learn": "Build a small Flask API with blueprints and tests."
+  },
+  "FastAPI": {
+   "category": "framework",
+   "aliases": [
+    "fast api"
+   ],
+   "related": {
+    "Python": 0.5,
+    "Django": 0.6,
+    "Flask": 0.7,
+    "NestJS": 0.5,
+    "Express": 0.5,
+    "REST APIs": 0.4,
+    "Pydantic": 0.4
+   },
+   "learn": "Build a typed FastAPI service with dependency injection and async routes."
+  },
+  "Spring Boot": {
+   "category": "framework",
+   "aliases": [
+    "spring",
+    "spring framework",
+    "spring mvc"
+   ],
+   "related": {
+    "Django": 0.5,
+    "Java": 0.5,
+    ".NET": 0.5
+   },
+   "learn": "Build a REST API with Spring Boot and JPA.",
+   "strict": true
+  },
+  "Node.js": {
+   "category": "framework",
+   "aliases": [
+    "nodejs",
+    "node js",
+    "node"
+   ],
+   "related": {
+    "Django": 0.45,
+    "Express": 0.6,
+    "NestJS": 0.5
+   },
+   "learn": "Build a small REST API with Node.js and Express."
+  },
+  "Express": {
+   "category": "framework",
+   "aliases": [
+    "express.js",
+    "expressjs"
+   ],
+   "related": {
+    "Django": 0.5,
+    "Flask": 0.5,
+    "FastAPI": 0.5,
+    "Node.js": 0.6
+   },
+   "learn": "Build a small project using Express and read its official documentation.",
+   "strict": true
+  },
+  "NestJS": {
+   "category": "framework",
+   "aliases": [
+    "nest.js"
+   ],
+   "related": {
+    "Django": 0.5,
+    "FastAPI": 0.5,
+    "Node.js": 0.5,
+    "TypeScript": 0.5
+   },
+   "learn": "Build a small project using NestJS and read its official documentation."
+  },
+  ".NET": {
+   "category": "framework",
+   "aliases": [
+    "dotnet",
+    "asp.net",
+    "asp.net core",
+    ".net core",
+    ".net framework"
+   ],
+   "related": {
+    "Django": 0.45,
+    "C#": 0.5,
+    "Spring Boot": 0.5
+   },
+   "learn": "Build a small ASP.NET Core Web API."
+  },
+  "Laravel": {
+   "category": "framework",
+   "aliases": [],
+   "related": {
+    "Django": 0.5,
+    "PHP": 0.5
+   },
+   "learn": "Build a small project using Laravel and read its official documentation."
+  },
+  "React": {
+   "category": "framework",
+   "aliases": [
+    "react.js",
+    "reactjs",
+    "react js"
+   ],
+   "related": {
+    "Vue.js": 0.6,
+    "Angular": 0.55,
+    "Next.js": 0.7,
+    "React Native": 0.6,
+    "Svelte": 0.5,
+    "Redux": 0.5
+   },
+   "learn": "Build a small React app with hooks and component tests."
+  },
+  "Next.js": {
+   "category": "framework",
+   "aliases": [
+    "nextjs",
+    "next js"
+   ],
+   "related": {
+    "React": 0.7
+   },
+   "learn": "Build a small Next.js App Router project."
+  },
+  "Vue.js": {
+   "category": "framework",
+   "aliases": [
+    "vue",
+    "vuejs",
+    "vue 3"
+   ],
+   "related": {
+    "React": 0.6,
+    "Angular": 0.55
+   },
+   "learn": "Build a small project using Vue.js and read its official documentation."
+  },
+  "Angular": {
+   "category": "framework",
+   "aliases": [
+    "angularjs",
+    "angular 2+"
+   ],
+   "related": {
+    "React": 0.55,
+    "Vue.js": 0.55
+   },
+   "learn": "Build a small project using Angular and read its official documentation."
+  },
+  "Svelte": {
+   "category": "framework",
+   "aliases": [
+    "sveltekit"
+   ],
+   "related": {
+    "React": 0.5
+   },
+   "learn": "Build a small project using Svelte and read its official documentation."
+  },
+  "Tailwind CSS": {
+   "category": "framework",
+   "aliases": [
+    "tailwind",
+    "tailwindcss"
+   ],
+   "related": {
+    "CSS": 0.6
+   },
+   "learn": "Build a small project using Tailwind CSS and read its official documentation."
+  },
+  "Redux": {
+   "category": "library",
+   "aliases": [
+    "redux toolkit",
+    "rtk"
+   ],
+   "related": {
+    "React": 0.5
+   },
+   "learn": "Build a small project using Redux and read its official documentation."
+  },
+  "jQuery": {
+   "category": "library",
+   "aliases": [],
+   "related": {
+    "JavaScript": 0.5
+   },
+   "learn": "Build a small project using jQuery and read its official documentation."
+  },
+  "Bootstrap": {
+   "category": "library",
+   "aliases": [],
+   "related": {
+    "CSS": 0.6
+   },
+   "learn": "Build a small project using Bootstrap and read its official documentation."
+  },
+  "PostgreSQL": {
+   "category": "database",
+   "aliases": [
+    "postgres",
+    "postgresql db",
+    "psql",
+    "pgsql"
+   ],
+   "related": {
+    "MySQL": 0.65,
+    "SQL Server": 0.6,
+    "Oracle": 0.6,
+    "SQLite": 0.55,
+    "SQL": 0.6,
+    "pgvector": 0.6,
+    "Supabase": 0.6
+   },
+   "learn": "Model a relational schema in PostgreSQL and tune queries with EXPLAIN."
+  },
+  "MySQL": {
+   "category": "database",
+   "aliases": [
+    "mariadb"
+   ],
+   "related": {
+    "PostgreSQL": 0.65,
+    "SQL Server": 0.6,
+    "SQL": 0.6
+   },
+   "learn": "Build a small project using MySQL and read its official documentation."
+  },
+  "SQLite": {
+   "category": "database",
+   "aliases": [],
+   "related": {
+    "PostgreSQL": 0.55,
+    "SQL": 0.5
+   },
+   "learn": "Build a small project using SQLite and read its official documentation."
+  },
+  "SQL Server": {
+   "category": "database",
+   "aliases": [
+    "mssql",
+    "ms sql",
+    "microsoft sql server",
+    "sqlserver"
+   ],
+   "related": {
+    "PostgreSQL": 0.6,
+    "MySQL": 0.6,
+    "SQL": 0.6
+   },
+   "learn": "Build a small project using SQL Server and read its official documentation."
+  },
+  "Oracle": {
+   "category": "database",
+   "aliases": [
+    "oracle db",
+    "oracle database"
+   ],
+   "related": {
+    "PostgreSQL": 0.6,
+    "SQL": 0.5
+   },
+   "learn": "Build a small project using Oracle and read its official documentation.",
+   "strict": true
+  },
+  "MongoDB": {
+   "category": "database",
+   "aliases": [
+    "mongo",
+    "mongoose"
+   ],
+   "related": {
+    "DynamoDB": 0.5,
+    "Cassandra": 0.4
+   },
+   "learn": "Model documents and indexes in MongoDB."
+  },
+  "Redis": {
+   "category": "database",
+   "aliases": [],
+   "related": {
+    "Elasticsearch": 0.3,
+    "Celery": 0.35
+   },
+   "learn": "Use Redis for caching and rate limiting in a small service."
+  },
+  "Elasticsearch": {
+   "category": "database",
+   "aliases": [
+    "elastic search",
+    "elk",
+    "opensearch"
+   ],
+   "related": {
+    "Redis": 0.3
+   },
+   "learn": "Build a small project using Elasticsearch and read its official documentation."
+  },
+  "DynamoDB": {
+   "category": "database",
+   "aliases": [
+    "dynamo db"
+   ],
+   "related": {
+    "MongoDB": 0.5
+   },
+   "learn": "Build a small project using DynamoDB and read its official documentation."
+  },
+  "Cassandra": {
+   "category": "database",
+   "aliases": [
+    "apache cassandra"
+   ],
+   "related": {
+    "MongoDB": 0.4
+   },
+   "learn": "Build a small project using Cassandra and read its official documentation."
+  },
+  "Supabase": {
+   "category": "platform",
+   "aliases": [],
+   "related": {
+    "PostgreSQL": 0.6
+   },
+   "learn": "Build a small project using Supabase and read its official documentation."
+  },
+  "pgvector": {
+   "category": "database",
+   "aliases": [
+    "pg vector"
+   ],
+   "related": {
+    "PostgreSQL": 0.6
+   },
+   "learn": "Build a small project using pgvector and read its official documentation."
+  },
+  "Kafka": {
+   "category": "platform",
+   "aliases": [
+    "apache kafka"
+   ],
+   "related": {
+    "RabbitMQ": 0.65
+   },
+   "learn": "Build a producer/consumer pipeline with Kafka."
+  },
+  "RabbitMQ": {
+   "category": "platform",
+   "aliases": [
+    "rabbit mq",
+    "amqp"
+   ],
+   "related": {
+    "Kafka": 0.65,
+    "Celery": 0.4
+   },
+   "learn": "Build a small project using RabbitMQ and read its official documentation."
+  },
+  "Celery": {
+   "category": "library",
+   "aliases": [],
+   "related": {
+    "RabbitMQ": 0.4,
+    "Redis": 0.35
+   },
+   "learn": "Add Celery background tasks with Redis to a small web app."
+  },
+  "GraphQL": {
+   "category": "technology",
+   "aliases": [
+    "graph ql",
+    "apollo"
+   ],
+   "related": {
+    "REST APIs": 0.5
+   },
+   "learn": "Build a small project using GraphQL and read its official documentation."
+  },
+  "REST APIs": {
+   "category": "technology",
+   "aliases": [
+    "rest",
+    "restful",
+    "rest api",
+    "restful apis",
+    "restful api",
+    "rest apis",
+    "web api",
+    "web apis"
+   ],
+   "related": {
+    "GraphQL": 0.5,
+    "API Design": 0.7,
+    "FastAPI": 0.4,
+    "Flask": 0.35,
+    "Django": 0.35,
+    "gRPC": 0.45,
+    "OAuth": 0.3
+   },
+   "learn": "Design and document a REST API following resource conventions."
+  },
+  "gRPC": {
+   "category": "technology",
+   "aliases": [
+    "protobuf",
+    "protocol buffers"
+   ],
+   "related": {
+    "REST APIs": 0.45
+   },
+   "learn": "Build a small project using gRPC and read its official documentation."
+  },
+  "Microservices": {
+   "category": "technology",
+   "aliases": [
+    "micro services",
+    "microservice",
+    "microservice architecture"
+   ],
+   "related": {
+    "Docker": 0.35,
+    "System Design": 0.5
+   },
+   "learn": "Split a small monolith into two services communicating over HTTP or a queue."
+  },
+  "Docker": {
+   "category": "devops",
+   "aliases": [
+    "dockerfile",
+    "docker compose",
+    "docker-compose",
+    "containerization",
+    "containers",
+    "containerisation"
+   ],
+   "related": {
+    "Kubernetes": 0.55,
+    "Linux": 0.3,
+    "AWS": 0.3,
+    "CI/CD": 0.3,
+    "Microservices": 0.35
+   },
+   "learn": "Containerize a small app with a Dockerfile and docker-compose."
+  },
+  "Kubernetes": {
+   "category": "devops",
+   "aliases": [
+    "k8s",
+    "kubectl",
+    "helm",
+    "eks",
+    "gke",
+    "aks"
+   ],
+   "related": {
+    "Docker": 0.55,
+    "Terraform": 0.3
+   },
+   "learn": "Deploy a small app to a local Kubernetes cluster (kind or minikube)."
+  },
+  "AWS": {
+   "category": "cloud",
+   "aliases": [
+    "amazon web services",
+    "ec2",
+    "s3",
+    "lambda",
+    "aws lambda",
+    "cloudformation",
+    "bedrock",
+    "amazon aws"
+   ],
+   "related": {
+    "Docker": 0.3,
+    "Azure": 0.6,
+    "Google Cloud": 0.6
+   },
+   "learn": "Deploy a small app on AWS (EC2 or Lambda) and learn IAM basics."
+  },
+  "Azure": {
+   "category": "cloud",
+   "aliases": [
+    "microsoft azure",
+    "azure devops"
+   ],
+   "related": {
+    "AWS": 0.6,
+    "Google Cloud": 0.6
+   },
+   "learn": "Build a small project using Azure and read its official documentation."
+  },
+  "Google Cloud": {
+   "category": "cloud",
+   "aliases": [
+    "gcp",
+    "google cloud platform",
+    "bigquery"
+   ],
+   "related": {
+    "AWS": 0.6,
+    "Azure": 0.6
+   },
+   "learn": "Build a small project using Google Cloud and read its official documentation."
+  },
+  "Terraform": {
+   "category": "devops",
+   "aliases": [
+    "infrastructure as code",
+    "iac"
+   ],
+   "related": {
+    "Kubernetes": 0.3,
+    "Ansible": 0.5
+   },
+   "learn": "Build a small project using Terraform and read its official documentation."
+  },
+  "Ansible": {
+   "category": "devops",
+   "aliases": [],
+   "related": {
+    "Terraform": 0.5
+   },
+   "learn": "Build a small project using Ansible and read its official documentation."
+  },
+  "CI/CD": {
+   "category": "devops",
+   "aliases": [
+    "cicd",
+    "ci cd",
+    "continuous integration",
+    "continuous delivery",
+    "continuous deployment",
+    "github actions",
+    "gitlab ci",
+    "jenkins",
+    "circleci",
+    "azure pipelines"
+   ],
+   "related": {
+    "Docker": 0.3,
+    "Git": 0.3
+   },
+   "learn": "Set up a CI pipeline that lints, tests and builds a project on every push."
+  },
+  "Git": {
+   "category": "devops",
+   "aliases": [
+    "github",
+    "gitlab",
+    "bitbucket",
+    "version control"
+   ],
+   "related": {
+    "CI/CD": 0.3
+   },
+   "learn": "Practise branching, rebasing and pull-request workflows."
+  },
+  "Linux": {
+   "category": "devops",
+   "aliases": [
+    "ubuntu",
+    "unix",
+    "centos",
+    "debian",
+    "red hat",
+    "rhel"
+   ],
+   "related": {
+    "Docker": 0.3,
+    "Bash": 0.5,
+    "Prometheus": 0.2
+   },
+   "learn": "Administer a small Linux VM: users, services, logs and networking."
+  },
+  "Nginx": {
+   "category": "devops",
+   "aliases": [
+    "apache",
+    "apache http server"
+   ],
+   "related": {},
+   "learn": "Build a small project using Nginx and read its official documentation."
+  },
+  "Prometheus": {
+   "category": "devops",
+   "aliases": [
+    "grafana",
+    "monitoring",
+    "observability",
+    "datadog"
+   ],
+   "related": {
+    "Linux": 0.2
+   },
+   "learn": "Build a small project using Prometheus and read its official documentation."
+  },
+  "Machine Learning": {
+   "category": "data",
+   "aliases": [
+    "ml",
+    "machine-learning",
+    "scikit-learn",
+    "sklearn",
+    "xgboost"
+   ],
+   "related": {
+    "Deep Learning": 0.6,
+    "Statistics": 0.5,
+    "Data Analysis": 0.45,
+    "NLP": 0.5
+   },
+   "learn": "Train and evaluate a model on a public dataset with scikit-learn."
+  },
+  "Deep Learning": {
+   "category": "data",
+   "aliases": [
+    "neural networks",
+    "cnn",
+    "rnn",
+    "transformers"
+   ],
+   "related": {
+    "Machine Learning": 0.6,
+    "PyTorch": 0.6,
+    "TensorFlow": 0.6
+   },
+   "learn": "Build a small project using Deep Learning and read its official documentation."
+  },
+  "PyTorch": {
+   "category": "data",
+   "aliases": [
+    "torch"
+   ],
+   "related": {
+    "TensorFlow": 0.7,
+    "Deep Learning": 0.6
+   },
+   "learn": "Build a small project using PyTorch and read its official documentation."
+  },
+  "TensorFlow": {
+   "category": "data",
+   "aliases": [
+    "keras"
+   ],
+   "related": {
+    "PyTorch": 0.7,
+    "Deep Learning": 0.6
+   },
+   "learn": "Build a small project using TensorFlow and read its official documentation."
+  },
+  "NLP": {
+   "category": "data",
+   "aliases": [
+    "natural language processing",
+    "nltk",
+    "spacy",
+    "text mining"
+   ],
+   "related": {
+    "LLMs": 0.6,
+    "Machine Learning": 0.5
+   },
+   "learn": "Build a small project using NLP and read its official documentation."
+  },
+  "LLMs": {
+   "category": "data",
+   "aliases": [
+    "large language models",
+    "llm",
+    "openai",
+    "gpt",
+    "prompt engineering",
+    "langchain",
+    "rag",
+    "retrieval augmented generation",
+    "generative ai"
+   ],
+   "related": {
+    "NLP": 0.6
+   },
+   "learn": "Build a small retrieval-augmented generation app with an LLM API."
+  },
+  "Pandas": {
+   "category": "data",
+   "aliases": [
+    "numpy",
+    "dataframes"
+   ],
+   "related": {
+    "Data Analysis": 0.6,
+    "Python": 0.3
+   },
+   "learn": "Clean and analyse a messy dataset with pandas."
+  },
+  "Data Analysis": {
+   "category": "data",
+   "aliases": [
+    "data analytics",
+    "data analyst",
+    "analytics",
+    "eda"
+   ],
+   "related": {
+    "Machine Learning": 0.45,
+    "Pandas": 0.6,
+    "Excel": 0.4,
+    "Power BI": 0.5,
+    "Tableau": 0.5
+   },
+   "learn": "Build a small project using Data Analysis and read its official documentation."
+  },
+  "Data Engineering": {
+   "category": "data",
+   "aliases": [
+    "etl",
+    "elt",
+    "data pipelines",
+    "airflow",
+    "apache airflow",
+    "dbt",
+    "data warehouse"
+   ],
+   "related": {
+    "Spark": 0.6,
+    "SQL": 0.5
+   },
+   "learn": "Build a small ETL pipeline with Airflow or dbt."
+  },
+  "Spark": {
+   "category": "data",
+   "aliases": [
+    "pyspark",
+    "apache spark",
+    "hadoop"
+   ],
+   "related": {
+    "Data Engineering": 0.6
+   },
+   "learn": "Build a small project using Spark and read its official documentation."
+  },
+  "Power BI": {
+   "category": "data",
+   "aliases": [
+    "powerbi"
+   ],
+   "related": {
+    "Tableau": 0.75,
+    "Data Analysis": 0.5
+   },
+   "learn": "Build a small project using Power BI and read its official documentation."
+  },
+  "Tableau": {
+   "category": "data",
+   "aliases": [],
+   "related": {
+    "Power BI": 0.75,
+    "Data Analysis": 0.5
+   },
+   "learn": "Build a small project using Tableau and read its official documentation."
+  },
+  "Excel": {
+   "category": "tool",
+   "aliases": [
+    "microsoft excel",
+    "ms excel",
+    "vlookup",
+    "pivot tables"
+   ],
+   "related": {
+    "Data Analysis": 0.4
+   },
+   "learn": "Build a small project using Excel and read its official documentation."
+  },
+  "Statistics": {
+   "category": "data",
+   "aliases": [
+    "statistical analysis",
+    "hypothesis testing"
+   ],
+   "related": {
+    "Machine Learning": 0.5
+   },
+   "learn": "Build a small project using Statistics and read its official documentation."
+  },
+  "Unit Testing": {
+   "category": "practice",
+   "aliases": [
+    "unit tests",
+    "pytest",
+    "unittest",
+    "junit",
+    "jest",
+    "tdd",
+    "test driven development",
+    "test-driven development",
+    "mocha"
+   ],
+   "related": {
+    "Pytest": 0.8,
+    "Test Automation": 0.5
+   },
+   "learn": "Add unit tests with a coverage target to an existing project."
+  },
+  "Test Automation": {
+   "category": "practice",
+   "aliases": [
+    "selenium",
+    "cypress",
+    "playwright",
+    "e2e testing",
+    "qa automation",
+    "automated testing"
+   ],
+   "related": {
+    "Unit Testing": 0.5
+   },
+   "learn": "Build a small project using Test Automation and read its official documentation."
+  },
+  "Agile": {
+   "category": "practice",
+   "aliases": [
+    "scrum",
+    "kanban",
+    "sprint planning"
+   ],
+   "related": {
+    "Project Management": 0.4,
+    "Jira": 0.4
+   },
+   "learn": "Build a small project using Agile and read its official documentation."
+  },
+  "Code Review": {
+   "category": "practice",
+   "aliases": [
+    "code reviews",
+    "pull requests",
+    "peer review"
+   ],
+   "related": {},
+   "learn": "Build a small project using Code Review and read its official documentation."
+  },
+  "System Design": {
+   "category": "practice",
+   "aliases": [
+    "software architecture",
+    "distributed systems",
+    "scalability",
+    "design patterns",
+    "solid principles",
+    "object oriented programming",
+    "oop"
+   ],
+   "related": {
+    "Microservices": 0.5
+   },
+   "learn": "Study classic system-design case studies and diagram one yourself."
+  },
+  "Data Structures": {
+   "category": "practice",
+   "aliases": [
+    "algorithms",
+    "data structures and algorithms",
+    "dsa"
+   ],
+   "related": {},
+   "learn": "Build a small project using Data Structures and read its official documentation."
+  },
+  "Security": {
+   "category": "practice",
+   "aliases": [
+    "owasp",
+    "application security",
+    "oauth",
+    "jwt",
+    "authentication",
+    "authorization",
+    "cybersecurity"
+   ],
+   "related": {
+    "OAuth": 0.5
+   },
+   "learn": "Review the OWASP Top 10 and apply it to a small web app."
+  },
+  "Performance Optimization": {
+   "category": "practice",
+   "aliases": [
+    "performance tuning",
+    "profiling",
+    "query optimization",
+    "caching"
+   ],
+   "related": {},
+   "learn": "Build a small project using Performance Optimization and read its official documentation."
+  },
+  "API Design": {
+   "category": "practice",
+   "aliases": [
+    "openapi",
+    "swagger"
+   ],
+   "related": {
+    "REST APIs": 0.7
+   },
+   "learn": "Build a small project using API Design and read its official documentation."
+  },
+  "Android": {
+   "category": "framework",
+   "aliases": [
+    "android sdk",
+    "jetpack compose"
+   ],
+   "related": {
+    "Kotlin": 0.5,
+    "iOS": 0.4
+   },
+   "learn": "Build a small project using Android and read its official documentation."
+  },
+  "iOS": {
+   "category": "framework",
+   "aliases": [
+    "ios development",
+    "uikit",
+    "xcode"
+   ],
+   "related": {
+    "Swift": 0.5,
+    "Android": 0.4
+   },
+   "learn": "Build a small project using iOS and read its official documentation."
+  },
+  "React Native": {
+   "category": "framework",
+   "aliases": [
+    "reactnative"
+   ],
+   "related": {
+    "React": 0.6,
+    "Flutter": 0.6
+   },
+   "learn": "Build a small project using React Native and read its official documentation."
+  },
+  "Flutter": {
+   "category": "framework",
+   "aliases": [
+    "dart"
+   ],
+   "related": {
+    "React Native": 0.6
+   },
+   "learn": "Build a small project using Flutter and read its official documentation."
+  },
+  "Figma": {
+   "category": "tool",
+   "aliases": [
+    "ui design",
+    "ux design",
+    "wireframing",
+    "prototyping"
+   ],
+   "related": {},
+   "learn": "Build a small project using Figma and read its official documentation."
+  },
+  "Jira": {
+   "category": "tool",
+   "aliases": [
+    "confluence",
+    "asana",
+    "trello"
+   ],
+   "related": {
+    "Agile": 0.4
+   },
+   "learn": "Build a small project using Jira and read its official documentation."
+  },
+  "Postman": {
+   "category": "tool",
+   "aliases": [],
+   "related": {},
+   "learn": "Build a small project using Postman and read its official documentation."
+  },
+  "WebSockets": {
+   "category": "technology",
+   "aliases": [
+    "websocket",
+    "socket.io",
+    "signalr"
+   ],
+   "related": {},
+   "learn": "Build a small project using WebSockets and read its official documentation."
+  },
+  "OAuth": {
+   "category": "technology",
+   "aliases": [
+    "oauth2",
+    "openid connect",
+    "oidc",
+    "sso",
+    "saml"
+   ],
+   "related": {
+    "Security": 0.5,
+    "REST APIs": 0.3
+   },
+   "learn": "Build a small project using OAuth and read its official documentation."
+  },
+  "SQLAlchemy": {
+   "category": "library",
+   "aliases": [
+    "alembic"
+   ],
+   "related": {
+    "Django": 0.35,
+    "Hibernate": 0.5
+   },
+   "learn": "Build a small project using SQLAlchemy and read its official documentation."
+  },
+  "Pydantic": {
+   "category": "library",
+   "aliases": [],
+   "related": {
+    "FastAPI": 0.4
+   },
+   "learn": "Build a small project using Pydantic and read its official documentation."
+  },
+  "Pytest": {
+   "category": "library",
+   "aliases": [],
+   "related": {
+    "Unit Testing": 0.8
+   },
+   "learn": "Build a small project using Pytest and read its official documentation."
+  },
+  "Hibernate": {
+   "category": "library",
+   "aliases": [
+    "jpa",
+    "entity framework",
+    "ef core",
+    "orm"
+   ],
+   "related": {
+    "SQLAlchemy": 0.5
+   },
+   "learn": "Build a small project using Hibernate and read its official documentation."
+  },
+  "Unity": {
+   "category": "tool",
+   "aliases": [
+    "unity3d",
+    "unreal engine"
+   ],
+   "related": {},
+   "learn": "Build a small project using Unity and read its official documentation."
+  },
+  "Blockchain": {
+   "category": "technology",
+   "aliases": [
+    "solidity",
+    "ethereum",
+    "web3",
+    "smart contracts"
+   ],
+   "related": {},
+   "learn": "Build a small project using Blockchain and read its official documentation."
+  },
+  "Embedded Systems": {
+   "category": "technology",
+   "aliases": [
+    "firmware",
+    "rtos",
+    "arduino",
+    "raspberry pi",
+    "microcontrollers"
+   ],
+   "related": {},
+   "learn": "Build a small project using Embedded Systems and read its official documentation."
+  },
+  "Networking": {
+   "category": "technology",
+   "aliases": [
+    "tcp/ip",
+    "dns",
+    "http",
+    "load balancing",
+    "vpn"
+   ],
+   "related": {},
+   "learn": "Build a small project using Networking and read its official documentation."
+  },
+  "Project Management": {
+   "category": "soft",
+   "aliases": [
+    "pmp",
+    "stakeholder management",
+    "roadmapping",
+    "product management"
+   ],
+   "related": {
+    "Agile": 0.4,
+    "Leadership": 0.4
+   },
+   "learn": "Build a small project using Project Management and read its official documentation."
+  },
+  "Communication": {
+   "category": "soft",
+   "aliases": [
+    "communication skills",
+    "presentation skills",
+    "stakeholder communication"
+   ],
+   "related": {
+    "Teamwork": 0.4
+   },
+   "learn": "Build a small project using Communication and read its official documentation."
+  },
+  "Leadership": {
+   "category": "soft",
+   "aliases": [
+    "team leadership",
+    "mentoring",
+    "people management",
+    "team lead"
+   ],
+   "related": {
+    "Project Management": 0.4
+   },
+   "learn": "Build a small project using Leadership and read its official documentation."
+  },
+  "Problem Solving": {
+   "category": "soft",
+   "aliases": [
+    "analytical thinking",
+    "critical thinking",
+    "troubleshooting",
+    "debugging"
+   ],
+   "related": {},
+   "learn": "Build a small project using Problem Solving and read its official documentation."
+  },
+  "Teamwork": {
+   "category": "soft",
+   "aliases": [
+    "collaboration",
+    "cross-functional",
+    "team player"
+   ],
+   "related": {
+    "Communication": 0.4
+   },
+   "learn": "Build a small project using Teamwork and read its official documentation."
+  },
+  "Customer Service": {
+   "category": "soft",
+   "aliases": [
+    "customer support",
+    "client relations",
+    "client management"
+   ],
+   "related": {},
+   "learn": "Build a small project using Customer Service and read its official documentation."
+  },
+  "SEO": {
+   "category": "tool",
+   "aliases": [
+    "search engine optimization",
+    "google analytics"
+   ],
+   "related": {},
+   "learn": "Build a small project using SEO and read its official documentation."
+  },
+  "Salesforce": {
+   "category": "tool",
+   "aliases": [
+    "crm",
+    "hubspot"
+   ],
+   "related": {},
+   "learn": "Build a small project using Salesforce and read its official documentation."
+  },
+  "SAP": {
+   "category": "tool",
+   "aliases": [
+    "erp",
+    "sap hana"
+   ],
+   "related": {},
+   "learn": "Build a small project using SAP and read its official documentation.",
+   "strict": true
+  },
+  "Accounting": {
+   "category": "domain",
+   "aliases": [
+    "bookkeeping",
+    "quickbooks",
+    "financial reporting",
+    "gaap",
+    "ifrs"
+   ],
+   "related": {},
+   "learn": "Build a small project using Accounting and read its official documentation."
+  },
+  "Recruitment": {
+   "category": "domain",
+   "aliases": [
+    "talent acquisition",
+    "sourcing",
+    "hr",
+    "human resources",
+    "onboarding"
+   ],
+   "related": {},
+   "learn": "Build a small project using Recruitment and read its official documentation."
+  },
+  "Technical Writing": {
+   "category": "domain",
+   "aliases": [
+    "documentation",
+    "api documentation"
+   ],
+   "related": {},
+   "learn": "Build a small project using Technical Writing and read its official documentation."
+  }
+ }
+}
